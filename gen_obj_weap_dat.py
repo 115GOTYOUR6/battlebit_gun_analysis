@@ -1,5 +1,4 @@
 import gun_obj
-import pickle
 
 
 def naked():
@@ -102,18 +101,18 @@ def barrel_compare():
     return guns
 
 
-guns = naked()
-with open("./obj_weap_data.txt", 'bw') as f:
-    pickle.dump(guns, f)
-
-guns = ttk_plot_guns()
-with open("./obj_ttk_guide_weap_data.txt", 'bw') as f:
-    pickle.dump(guns, f)
-
-guns = hb_guns()
-with open("./obj_hb_weap_data.txt", 'bw') as f:
-    pickle.dump(guns, f)
-
-guns = barrel_compare()
-with open("./obj_barrel_compare.txt", 'bw') as f:
-    pickle.dump(guns, f)
+# guns = naked()
+# with open("./obj_weap_data.txt", 'bw') as f:
+#     pickle.dump(guns, f)
+#
+# guns = ttk_plot_guns()
+# with open("./obj_ttk_guide_weap_data.txt", 'bw') as f:
+#     pickle.dump(guns, f)
+#
+# guns = hb_guns()
+# with open("./obj_hb_weap_data.txt", 'bw') as f:
+#     pickle.dump(guns, f)
+#
+# guns = barrel_compare()
+# with open("./obj_barrel_compare.txt", 'bw') as f:
+#     pickle.dump(guns, f)

@@ -74,8 +74,7 @@ elif args.data == "barrel_compare":
 else:
     raise ValueError
 
-valid_weaps, title_list = weapon_organiser.valid_weapons(args.weapons,
-                                                         arsenal)
+valid_weaps, title_list = weapon_organiser.plot_info(args.weapons, arsenal)
 if args.dark_mode:
     plt.style.use('dark_background')
 
