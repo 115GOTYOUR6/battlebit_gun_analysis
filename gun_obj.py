@@ -1,3 +1,8 @@
+"""
+    Contains class definitions for each weapon in the game and functions that
+    calculate various things including shot damage at a given range, ttk etc.
+"""
+
 import numpy as np
 from math import ceil
 
@@ -12,8 +17,8 @@ def dp3(x):
 
 ###################################################
 # attachments
-# additions to these require the val_x arrays in the weapon type classes to be
-# updated if they are to be attached.
+# additions to these require the val_x arrays (list of valid attatchments for
+# weapons) in the weapon type classes to be updated if they are to be attached.
 class Attachment():
     BOD_DAM = 1
     AR_DAM = 1
@@ -31,6 +36,7 @@ class Barrel(Attachment):
 
 
 class HeavyBarrel(Barrel):
+    """Provides multiplyers for gun stats as per the Heavy Barrel in game"""
     NAME = "HeavyBarrel"
     BOD_DAM = 1.1
     AR_DAM = 1.1
@@ -38,6 +44,7 @@ class HeavyBarrel(Barrel):
 
 
 class LongBarrel(Barrel):
+    """Provides multiplyers for gun stats as per the Long Barrel in game"""
     NAME = "LongBarrel"
     BOD_DAM = 1.05
     AR_DAM = 1.1
@@ -45,6 +52,7 @@ class LongBarrel(Barrel):
 
 
 class Ranger(Barrel):
+    """Provides multiplyers for gun stats as per the Ranger Barrel in game"""
     NAME = "Ranger"
     BOD_DAM = 1.1
     AR_DAM = 1.1
@@ -52,6 +60,7 @@ class Ranger(Barrel):
 
 
 class EmptyBarrel(Barrel):
+    """Provides multiplyers for gun stats as per the Empty Barrel in game"""
     NAME = "Empty"
 
 
@@ -223,6 +232,7 @@ class Gun(object):
     def swap_attach(self, slot, attachment):
         """
         Add an attachment to the given slot.
+
         Input:
             - slot: str, the part of the gun the attachment is to go on.
             - attachment: cust obj
@@ -316,13 +326,7 @@ class Carbine(Gun):
 ###############################################################
 # Weapon definitions
 # additions here need to be added to the data generation functions too.
-# NOTE
-# perhaps these should be put directly into the gen_obj_weap data fucntions/
-# file writes. These are all data classes, which themselves are all guns.
-# they are technically all the same, just different stats. Also, putting
-# this data into the data gen file, means only that has to be updated. Perhaps
-# the weapon type should be the lowest abstraction?
-# But these are technically data classes too though no?
+
 class Acr(Ar):
     def __init__(self):
         Ar.__init__(self)

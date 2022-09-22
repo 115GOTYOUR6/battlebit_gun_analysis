@@ -1,3 +1,6 @@
+# Contains functions that generate dictionaries of gun objects
+
+
 import gun_obj
 
 

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import weapon_organiser
 import file_sys
-import gen_obj_weap_dat
+import man_bit_plot
 
 parser = argparse.ArgumentParser(description="Generate ttk plots for the"
                                  " given weapon and damage types.")
@@ -59,20 +59,11 @@ parser.add_argument('--save', type=str, default=None,
 args = parser.parse_args()
 
 # pickle is doing weird shit, you will need to work it out
+# the values for some weapons were changing, such as the ump45 rof.
 # with open(args.file, 'br') as f:
 #     arsenal = pickle.load(f)
 
-# FIXME Put this in a function as well you clown
-if args.data == "naked":
-    arsenal = gen_obj_weap_dat.naked()
-elif args.data == "ttk_dat":
-    arsenal = gen_obj_weap_dat.ttk_plot_guns()
-elif args.data == "hb_guns":
-    arsenal = gen_obj_weap_dat.hb_guns()
-elif args.data == "barrel_compare":
-    arsenal = gen_obj_weap_dat.barrel_compare()
-else:
-    raise ValueError
+arsenal = weapon_organiser.get_arsenal(args.data)
 
 valid_weaps, title_list = weapon_organiser.plot_info(args.weapons, arsenal)
 if args.dark_mode:
@@ -87,6 +78,7 @@ for dam_type in args.dam_type:
         y[name] = np.array([arsenal[g_type][name].ttk(j, dam_type)
                             for j in x])
         plt.plot(x, y[name], label=name, lw=2.5)
+    # TODO: put these into rc_params so they aren't being looped over
     plt.legend(loc="lower right", fontsize=args.f_size)
     plt.yticks(fontsize=args.f_size*args.tick_size)
     if args.y_lim is not None:
@@ -94,11 +86,9 @@ for dam_type in args.dam_type:
     plt.xticks(fontsize=args.f_size*args.tick_size)
     plt.xlabel("Distance to Target (m)", fontsize=args.f_size)
     plt.ylabel("Time to Kill (ms)", fontsize=args.f_size)
-    # FIXME put this in a fucntion you clown
-    if args.fig_name is None:
-        fig_title = ' '.join(title_list)+f" Time to Kill {dam_type}"
-    else:
-        fig_title = args.fig_name + f" Time to Kill {dam_type}"
+    fig_title = man_bit_plot.ttk_plot_title(title_list,
+                                            dam_type,
+                                            args.fig_name)
     plt.title(fig_title, fontsize=args.f_size)
     figs.append((fig, fig_title))
 
@@ -109,4 +99,4 @@ if args.save is not None:
 else:
     for figure, title in figs:
         figure.show()
-    input()
+    input()  # hacky way of keeping multiple plots open

@@ -1,3 +1,23 @@
+# Contains all functions that involve the reading in or manipulation of a
+# dictionary containing gun objects.
+
+import gen_obj_weap_dat
+
+
+def get_arsenal(data_type):
+    """"""
+    if data_type == "naked":
+        return gen_obj_weap_dat.naked()
+    elif data_type == "ttk_dat":
+        return gen_obj_weap_dat.ttk_plot_guns()
+    elif data_type == "hb_guns":
+        return gen_obj_weap_dat.hb_guns()
+    elif data_type == "barrel_compare":
+        return gen_obj_weap_dat.barrel_compare()
+    else:
+        raise ValueError
+
+
 def plot_info(names, weaps, type_excl=[], name_excl=[]):
     """
     Given the list of names, determine the ones that exist in the weapon data
