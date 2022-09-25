@@ -19,27 +19,31 @@ def naked():
         for j in g_types[i]:
             guns[i][j] = {}
 
-    guns["AR"]["ACR"] = gun_obj.Acr()
-    guns["AR"]["AK15"] = gun_obj.Ak15()
     guns["AR"]["AK74"] = gun_obj.Ak74()
-    guns["AR"]["G36C"] = gun_obj.G36c()
     guns["AR"]["M4A1"] = gun_obj.M4a1()
+    guns["AR"]["AK15"] = gun_obj.Ak15()
     guns["AR"]["SCAR-H"] = gun_obj.ScarH()
+    guns["AR"]["ACR"] = gun_obj.Acr()
     guns["AR"]["AUG_A3"] = gun_obj.AugA3()
+    guns["AR"]["SG550"] = gun_obj.Sg550()
     guns["AR"]["FAL"] = gun_obj.Fal()
+    guns["AR"]["PP19"] = gun_obj.Pp19()
+    guns["AR"]["G36C"] = gun_obj.G36c()
     guns["AR"]["FAMAS"] = gun_obj.Famas()
+    guns["AR"]["HK419"] = gun_obj.Hk419()
 
     guns["LMG"]["L86A1"] = gun_obj.L86a1()
     guns["LMG"]["M249"] = gun_obj.M249()
 
-    guns["SMG"]["KRISS_VECTOR"] = gun_obj.KrissVector()
     guns["SMG"]["MP7"] = gun_obj.Mp7()
-    guns["SMG"]["PP2000"] = gun_obj.Pp2000()
     guns["SMG"]["UMP-45"] = gun_obj.Ump45()
+    guns["SMG"]["PP2000"] = gun_obj.Pp2000()
+    guns["SMG"]["KRISS_VECTOR"] = gun_obj.KrissVector()
     guns["SMG"]["MP5"] = gun_obj.Mp5()
 
     guns["PDW"]["HONEY_BADGER"] = gun_obj.HoneyBadger()
     guns["PDW"]["P90"] = gun_obj.P90()
+    guns["PDW"]["GROZA"] = gun_obj.Groza()
 
     guns["CARBINE"]["AS_VAL"] = gun_obj.AsVal()
     return guns
@@ -51,24 +55,32 @@ def ttk_plot_guns():
     guns["AR"]["AUG_A3_HB"] = gun_obj.AugA3()
     guns["AR"]["AK74_HB"] = gun_obj.Ak74()
     guns["AR"]["L86A1_LB"] = gun_obj.L86a1()
+    guns["AR"]["HK419_HB"] = gun_obj.Hk419()
 
     guns["AR"]["AUG_A3_HB"].swap_barrel(gun_obj.HeavyBarrel)
     guns["AR"]["AK74_HB"].swap_barrel(gun_obj.HeavyBarrel)
     guns["AR"]["L86A1_LB"].swap_barrel(gun_obj.LongBarrel)
+    guns["AR"]["HK419_HB"].swap_barrel(gun_obj.HeavyBarrel)
     return guns
 
 
-def hb_guns():
+def hb_lb_dat():
     guns = naked()
 
+    guns["LMG"].pop("L86A1")
     guns["AR"].pop("AUG_A3")
     guns["AR"].pop("AK74")
+    guns["AR"].pop("HK419")
 
+    guns["LMG"]["L86A1_LB"] = gun_obj.L86a1()
     guns["AR"]["AUG_A3_HB"] = gun_obj.AugA3()
     guns["AR"]["AK74_HB"] = gun_obj.Ak74()
+    guns["AR"]["HK419_HB"] = gun_obj.Hk419()
 
+    guns["LMG"]["L86A1_LB"].swap_barrel(gun_obj.LongBarrel)
     guns["AR"]["AUG_A3_HB"].swap_barrel(gun_obj.HeavyBarrel)
     guns["AR"]["AK74_HB"].swap_barrel(gun_obj.HeavyBarrel)
+    guns["AR"]["HK419_HB"].swap_barrel(gun_obj.HeavyBarrel)
     return guns
 
 

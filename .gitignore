@@ -2,6 +2,8 @@
 plots/
 vir_*
 *.swp
+notes.txt
+guide_testing_methods.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

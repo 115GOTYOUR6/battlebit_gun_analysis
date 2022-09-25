@@ -13,7 +13,8 @@ parser = argparse.ArgumentParser(description="Generate ttk plots for the"
 #                     " dictionary should contain all the weapon property"
 #                     " values.")
 parser.add_argument('data', type=str,
-                    choices=["naked", "ttk_dat", "hb_guns", "barrel_compare"],
+                    choices=["naked", "ttk_dat", "hb_lb_dat",
+                             "barrel_compare"],
                     help="The data to use in the plots.")
 parser.add_argument('weapons', type=str, nargs='+',
                     help="The names of weapons or the class of weapons to"
@@ -63,6 +64,7 @@ args = parser.parse_args()
 # with open(args.file, 'br') as f:
 #     arsenal = pickle.load(f)
 
+# TODO: fix the weapon damage calculations to use bezier rather than linear
 arsenal = weapon_organiser.get_arsenal(args.data)
 
 valid_weaps, title_list = weapon_organiser.plot_info(args.weapons, arsenal)

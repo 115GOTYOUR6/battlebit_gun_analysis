@@ -327,28 +327,6 @@ class Carbine(Gun):
 # Weapon definitions
 # additions here need to be added to the data generation functions too.
 
-class Acr(Ar):
-    def __init__(self):
-        Ar.__init__(self)
-        self.bod_dam = 25
-        self.ar_dam = 30
-        self.dam_prof = [(1, 50), (self.MIN_CO, 300)]
-        self.rof = 700
-        self.velocity = 650
-        self.aim_down = 0.25
-
-
-class Ak15(Ar):
-    def __init__(self):
-        Ar.__init__(self)
-        self.bod_dam = 40
-        self.ar_dam = 40
-        self.dam_prof = [(1, 150), (self.MIN_CO, 300)]
-        self.rof = 540
-        self.velocity = 750
-        self.aim_down = 0.3
-
-
 class Ak74(Ar):
     def __init__(self):
         Ar.__init__(self)
@@ -357,18 +335,6 @@ class Ak74(Ar):
         self.dam_prof = [(1, 50), (self.MIN_CO, 300)]
         self.rof = 670
         self.velocity = 700
-        self.aim_down = 0.25
-
-
-class G36c(Ar):
-    def __init__(self):
-        Ar.__init__(self)
-        self.val_barrels = np.array([Ranger, LongBarrel])
-        self.bod_dam = 30
-        self.ar_dam = 25
-        self.dam_prof = [(1, 50), (self.MIN_CO, 300)]
-        self.rof = 750
-        self.velocity = 600
         self.aim_down = 0.25
 
 
@@ -383,6 +349,17 @@ class M4a1(Ar):
         self.aim_down = 0.24
 
 
+class Ak15(Ar):
+    def __init__(self):
+        Ar.__init__(self)
+        self.bod_dam = 40
+        self.ar_dam = 40
+        self.dam_prof = [(1, 150), (self.MIN_CO, 300)]
+        self.rof = 540
+        self.velocity = 750
+        self.aim_down = 0.3
+
+
 class ScarH(Ar):
     def __init__(self):
         Ar.__init__(self)
@@ -392,6 +369,17 @@ class ScarH(Ar):
         self.rof = 500
         self.velocity = 750
         self.aim_down = 0.2
+
+
+class Acr(Ar):
+    def __init__(self):
+        Ar.__init__(self)
+        self.bod_dam = 25
+        self.ar_dam = 30
+        self.dam_prof = [(1, 50), (self.MIN_CO, 300)]
+        self.rof = 700
+        self.velocity = 650
+        self.aim_down = 0.25
 
 
 class AugA3(Ar):
@@ -405,6 +393,17 @@ class AugA3(Ar):
         self.aim_down = 0.15
 
 
+class Sg550(Ar):
+    def __init__(self):
+        Ar.__init__(self)
+        self.bod_dam = 27
+        self.ar_dam = 27
+        self.dam_prof = [(1, 150), (self.MIN_CO, 300)]
+        self.rof = 700
+        self.velocity = 640
+        self.aim_down = 0.14
+
+
 class Fal(Ar):
     def __init__(self):
         Ar.__init__(self)
@@ -416,6 +415,30 @@ class Fal(Ar):
         self.aim_down = 0.22
 
 
+class Pp19(Ar):
+    def __init__(self):
+        Ar.__init__(self)
+        self.val_barrels = np.array([])
+        self.bod_dam = 25
+        self.ar_dam = 25
+        self.dam_prof = [(1, 50), (self.MIN_CO, 200)]
+        self.rof = 750
+        self.velocity = 400
+        self.aim_down = 0.20
+
+
+class G36c(Ar):
+    def __init__(self):
+        Ar.__init__(self)
+        self.val_barrels = np.array([Ranger, LongBarrel])
+        self.bod_dam = 30
+        self.ar_dam = 25
+        self.dam_prof = [(1, 50), (self.MIN_CO, 300)]
+        self.rof = 750
+        self.velocity = 600
+        self.aim_down = 0.25
+
+
 class Famas(Ar):
     def __init__(self):
         Ar.__init__(self)
@@ -425,6 +448,17 @@ class Famas(Ar):
         self.dam_prof = [(1, 50), (self.MIN_CO, 300)]
         self.rof = 900
         self.velocity = 600
+        self.aim_down = 0.25
+
+
+class Hk419(Ar):
+    def __init__(self):
+        Ar.__init__(self)
+        self.bod_dam = 31
+        self.ar_dam = 31
+        self.dam_prof = [(1, 50), (self.MIN_CO, 300)]
+        self.rof = 660
+        self.velocity = 700
         self.aim_down = 0.25
 
 
@@ -454,17 +488,6 @@ class M249(Lmg):
 
 ########################################################################
 # SMG
-class KrissVector(Smg):
-    def __init__(self):
-        Smg.__init__(self)
-        self.bod_dam = 24
-        self.ar_dam = 24
-        self.dam_prof = [(1, 50), (self.MIN_CO, 200)]
-        self.rof = 1200
-        self.velocity = 400
-        self.aim_down = 0.25
-
-
 class Mp7(Smg):
     def __init__(self):
         Smg.__init__(self)
@@ -474,6 +497,17 @@ class Mp7(Smg):
         self.rof = 950
         self.velocity = 350
         self.aim_down = 0.15
+
+
+class Ump45(Smg):
+    def __init__(self):
+        Smg.__init__(self)
+        self.bod_dam = 25
+        self.ar_dam = 25
+        self.dam_prof = [(1, 50), (self.MIN_CO, 200)]
+        self.rof = 700
+        self.velocity = 500
+        self.aim_down = 0.2
 
 
 class Pp2000(Smg):
@@ -487,15 +521,15 @@ class Pp2000(Smg):
         self.aim_down = 0.2
 
 
-class Ump45(Smg):
+class KrissVector(Smg):
     def __init__(self):
         Smg.__init__(self)
-        self.bod_dam = 25
-        self.ar_dam = 25
+        self.bod_dam = 24
+        self.ar_dam = 24
         self.dam_prof = [(1, 50), (self.MIN_CO, 200)]
-        self.rof = 700
-        self.velocity = 500
-        self.aim_down = 0.2
+        self.rof = 1200
+        self.velocity = 400
+        self.aim_down = 0.25
 
 
 class Mp5(Smg):
@@ -511,7 +545,6 @@ class Mp5(Smg):
 
 ###################################################################
 # PDW
-
 class HoneyBadger(Pdw):
     def __init__(self):
         Pdw.__init__(self)
@@ -530,6 +563,17 @@ class P90(Pdw):
         self.ar_dam = 28
         self.dam_prof = [(1, 50), (self.MIN_CO, 200)]
         self.rof = 800
+        self.velocity = 390
+        self.aim_down = 0.2
+
+
+class Groza(Pdw):
+    def __init__(self):
+        Pdw.__init__(self)
+        self.bod_dam = 27
+        self.ar_dam = 34
+        self.dam_prof = [(1, 50), (self.MIN_CO, 200)]
+        self.rof = 700
         self.velocity = 390
         self.aim_down = 0.2
 

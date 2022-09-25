@@ -1,7 +1,7 @@
 import gun_obj
-import gen_obj_weap_dat
 import argparse
 from pprint import pprint
+import weapon_organiser
 
 
 parser = argparse.ArgumentParser(description="Determine if the given"
@@ -12,9 +12,9 @@ parser = argparse.ArgumentParser(description="Determine if the given"
 #                     " dictionary should contain all the weapon property"
 #                     " values. Point to the file containing the weapons with"
 #                     " no attachments pls.")
-parser.add_argument('data', type=str,
-                    choices=["naked", "ttk_dat", "hb_guns", "barrel_compare"],
-                    help="The data to use in the plots.")
+# parser.add_argument('data', type=str,
+#                     choices=["naked"],
+#                     help="The data to use in the plots.")
 parser.add_argument('attach', type=str, choices=["HeavyBarrel", "LongBarrel"],
                     help="Check if the given attachment will change the ttk"
                     " on any of the guns contained in the file given. Note"
@@ -25,16 +25,8 @@ args = parser.parse_args()
 # with open(args.file, 'br') as f:
 #     arsenal = pickle.load(f)
 
-if args.data == "naked":
-    arsenal = gen_obj_weap_dat.naked()
-elif args.data == "ttk_dat":
-    arsenal = gen_obj_weap_dat.ttk_plot_guns()
-elif args.data == "hb_guns":
-    arsenal = gen_obj_weap_dat.hb_guns()
-elif args.data == "barrel_compare":
-    arsenal = gen_obj_weap_dat.barrel_compare()
-else:
-    raise ValueError
+
+arsenal = weapon_organiser.get_arsenal("naked")
 
 if args.attach == "HeavyBarrel":
     attachments = [gun_obj.HeavyBarrel, gun_obj.Ranger]
