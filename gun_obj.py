@@ -5,7 +5,13 @@
 
 import numpy as np
 from math import ceil
-from man_bit_plot import gun_bezier
+import bezier
+import sympy
+
+
+def mid_oneax(x1, x2):
+    # find the midpoint along one dimension
+    return x1 + (x2 - x1)/2
 
 
 def dp3(x):
@@ -143,19 +149,38 @@ class Gun(object):
                     / (self.dam_prof[1][0] - self.dam_prof[0][0]))
             return dam * (grad * (dist - self.dam_prof[0][0]) + 1)
 
+    def gen_bez_curve(self):
+        # Generate a curve that models the damage drop off for guns
+        x_ax_midpoint = mid_oneax(self.dam_prof[0][0], self.dam_prof[1][0])
+        nodes = np.array([
+            [self.dam_prof[0][0],
+             x_ax_midpoint - (self.dam_prof[1][0] - x_ax_midpoint)/4,
+             x_ax_midpoint + (self.dam_prof[1][0] - x_ax_midpoint)/4,
+             self.dam_prof[1][0]],
+            [self.dam_prof[0][1],
+             self.dam_prof[0][1],
+             self.dam_prof[1][1],
+             self.dam_prof[1][1]]
+        ])
+
+        return bezier.Curve(nodes, degree=3)
+
     def bez_shot_dam(self, dist, dam_type):
         """
         Returns the damage a bullet will do at the given distance.
         """
         dam = self.get_dam(dam_type)
         if dist <= self.dam_prof[0][0]:
-            return dam
+            return dam * self.dam_prof[0][1]
         elif dist >= self.dam_prof[1][0]:
             return self.dam_prof[1][1] * dam
         else:
-            # gun bezier from man_bit_plot
-            curve = gun_bezier(self.dam_prof)
-            return dam * curve.evaluate(dist)
+            curve = self.gen_bez_curve()
+            expr = curve.implicitize()
+            dam_coef, = sympy.solveset(expr.evalf(subs={'x': dist}), 'y',
+                                       domain=sympy.S.Reals)
+
+            return dam * dam_coef
 
     def btk(self, dist, dam_type):
         """

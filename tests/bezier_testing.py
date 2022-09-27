@@ -1,21 +1,22 @@
 import sys
 import os
+import sympy
+import matplotlib.pyplot as plt
 sys.path.insert(
     0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import matplotlib.pyplot as plt
-from man_bit_plot import gun_bezier
-import sympy
+import gun_obj
 
 
 plot = True
-dam_prof = [(100, 1), (300, 0.3)]
-curve = gun_bezier(dam_prof)
+gun = gun_obj.Hk419()
+curve = gun.gen_bez_curve()
 # print(curve.locate(np.array([[150], [1]])))
 # print(curve.locate(1))
 
 funct = curve.implicitize()
 x1 = 150
-solution1, = sympy.solveset(funct.evalf(subs={'x': x1}), 'y', domain=sympy.S.Reals)
+solution1, = sympy.solveset(funct.evalf(subs={'x': x1}), 'y',
+                            domain=sympy.S.Reals)
 print(solution1)
 
 # simp_exp = sympy.simplify(funct.subs('x', x1))
@@ -25,7 +26,8 @@ print(solution1)
 
 x2 = 240
 # print(simp_exp)
-solution2, = sympy.solveset(funct.evalf(subs={'x': x2}), 'y', domain=sympy.S.Reals)
+solution2, = sympy.solveset(funct.evalf(subs={'x': x2}), 'y',
+                            domain=sympy.S.Reals)
 print(solution2)
 
 if plot:
