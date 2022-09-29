@@ -9,9 +9,9 @@ import bezier
 import sympy
 
 
-def mid_oneax(x1, x2):
+def offset_oneax(x1, x2, offset):
     # find the midpoint along one dimension
-    return x1 + (x2 - x1)/2
+    return x1 + (x2 - x1)/2 + (x2 - x1)*offset
 
 
 def dp3(x):
@@ -149,13 +149,46 @@ class Gun(object):
                     / (self.dam_prof[1][0] - self.dam_prof[0][0]))
             return dam * (grad * (dist - self.dam_prof[0][0]) + 1)
 
-    def gen_bez_curve(self):
+    def gen_bez_curve(self, offset=0.15):
         # Generate a curve that models the damage drop off for guns
-        x_ax_midpoint = mid_oneax(self.dam_prof[0][0], self.dam_prof[1][0])
+        # Input:
+        #     - offset, float: parameter determines the offset of the middle
+        #                      bezier control points from the center of the
+        #                      domain:
+        #
+        #   |
+        #   |                       . P1
+        #   |
+        #   |
+        #   |
+        #   |                       . P2
+        #   |_______________________ _______________________
+        #   |                       |                      |
+        # self.dam_prof[0][0]    center           self.dam_prof[1][0]
+        #
+        #
+        #                              |
+        #                              |
+        #                              V
+        #
+        #   |
+        #   |                   . P1
+        #   |
+        #   |
+        #   |                       ____| offset
+        #   |                       |   . P2
+        #   |_______________________|_______________________
+        #   |                       |                      |
+        # self.dam_prof[0][0]    center           self.dam_prof[1][0]
+        #
+
+        # x_ax_midpoint = offset_oneax(self.dam_prof[0][0],
+        #                              self.dam_prof[1][0],
+        #                              0)
         nodes = np.array([
             [self.dam_prof[0][0],
-             x_ax_midpoint - (self.dam_prof[1][0] - x_ax_midpoint)/4,
-             x_ax_midpoint + (self.dam_prof[1][0] - x_ax_midpoint)/4,
+             offset_oneax(self.dam_prof[0][0], self.dam_prof[1][0], -1*offset),
+             offset_oneax(self.dam_prof[0][0], self.dam_prof[1][0], offset),
              self.dam_prof[1][0]],
             [self.dam_prof[0][1],
              self.dam_prof[0][1],
@@ -169,6 +202,9 @@ class Gun(object):
         """
         Returns the damage a bullet will do at the given distance.
         """
+        # TODO: make this more optimised. There is no reason to generate a
+        # curve everytime you calculate a single damage value with the same
+        # damage model
         dam = self.get_dam(dam_type)
         if dist <= self.dam_prof[0][0]:
             return dam * self.dam_prof[0][1]
@@ -178,7 +214,7 @@ class Gun(object):
             curve = self.gen_bez_curve()
             expr = curve.implicitize()
             dam_coef, = sympy.solveset(expr.evalf(subs={'x': dist}), 'y',
-                                       domain=sympy.S.Reals)
+                                       sympy.Interval(0, 1))
 
             return dam * dam_coef
 

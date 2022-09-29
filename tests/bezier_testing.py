@@ -1,3 +1,5 @@
+# test to see how the bezier curve package works
+
 import sys
 import os
 import sympy
@@ -32,4 +34,5 @@ print(solution2)
 
 if plot:
     curve.plot(100)
+    plt.plot()
     plt.show()
