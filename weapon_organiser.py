@@ -1,22 +1,6 @@
 # Contains all functions that involve the reading in or manipulation of a
 # dictionary containing gun objects.
 
-import gen_arsenal
-
-
-def get_arsenal(data_type):
-    """"""
-    if data_type == "naked":
-        return gen_arsenal.naked()
-    elif data_type == "ttk_dat":
-        return gen_arsenal.ttk_plot_guns()
-    elif data_type == "hb_lb_dat":
-        return gen_arsenal.hb_lb_dat()
-    elif data_type == "barrel_compare":
-        return gen_arsenal.barrel_compare()
-    else:
-        raise ValueError
-
 
 def plot_info(names, weaps, type_excl=[], name_excl=[]):
     """

@@ -1,7 +1,9 @@
 import argparse
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
 import weapon_organiser
+import gen_arsenal
 import file_sys
 import man_bit_plot
 
@@ -19,6 +21,7 @@ parser.add_argument('data', type=str,
 parser.add_argument('weapons', type=str, nargs='+',
                     help="The names of weapons or the class of weapons to"
                     " include in the figure.")
+
 parser.add_argument('--dam_type', type=list, nargs='*',
                     default=["ar_dam", "bod_dam"],
                     choices=["ar_dam", "bod_type"],
@@ -29,10 +32,16 @@ parser.add_argument('--range', type=tuple, default=(0, 150),
                     help="The range of distance to target values used for the"
                     " charts. This should be a tuple of ints or floats. Note"
                     " that this will also set the x axis range.")
+parser.add_argument("--bez_offset", type=float, default=0.15,
+                    help="float value. This will set the offset of the bezier"
+                    " curves used in the calculation of damage values for"
+                    " guns in their damage falloff range. This value should"
+                    " be set such that the gun damage is accurate to the"
+                    " game data.")
+
 parser.add_argument('--y_lim', type=tuple, default=(100, 900),
                     help="Sets the y axis limits. Set this to None if you want"
                     " matplotlib to do it for you")
-
 parser.add_argument('--fig_size', type=tuple, default=(19.2, 10.8),
                     help="The width and height of the figure. This is inches"
                     " by default. Note that multiplying the numbers here by"
@@ -64,34 +73,45 @@ args = parser.parse_args()
 # with open(args.file, 'br') as f:
 #     arsenal = pickle.load(f)
 
-# TODO: fix the weapon damage calculations to use bezier rather than linear
-arsenal = weapon_organiser.get_arsenal(args.data)
-
+arsenal = gen_arsenal.get_arsenal(args.data)
 valid_weaps, title_list = weapon_organiser.plot_info(args.weapons, arsenal)
+
 if args.dark_mode:
     plt.style.use('dark_background')
+mpl.rcParams['lines.linewidth'] = 2.5
+mpl.rcParams['figure.figsize'] = args.fig_size
+mpl.rcParams['xtick.labelsize'] = args.f_size*args.tick_size
+mpl.rcParams['ytick.labelsize'] = args.f_size*args.tick_size
+mpl.rcParams['axes.titlesize'] = args.f_size
+mpl.rcParams['axes.labelsize'] = args.f_size
+mpl.rcParams['legend.loc'] = "lower right"
+mpl.rcParams['legend.fontsize'] = args.f_size
+
+# TODO: this really needs to be read in from a file
+# also TODO: work out what is taking up all the time. A wrapper to calculate
+# the time would be ideal.
+bez_exprs = gen_arsenal.bez_expressions(arsenal, valid_weaps, args.bez_offset)
 
 figs = []
 for dam_type in args.dam_type:
     x = np.linspace(args.range[0], args.range[1], args.num_points)
     y = {}
-    fig = plt.figure(tight_layout=True, figsize=args.fig_size)
+    fig = plt.figure(tight_layout=True)
     for g_type, name in valid_weaps:
-        y[name] = np.array([arsenal[g_type][name].ttk(j, dam_type)
+        y[name] = np.array([arsenal[g_type][name].bez_ttk(j,
+                                                          dam_type,
+                                                          bez_exprs)
                             for j in x])
-        plt.plot(x, y[name], label=name, lw=2.5)
-    # TODO: put these into rc_params so they aren't being looped over
-    plt.legend(loc="lower right", fontsize=args.f_size)
-    plt.yticks(fontsize=args.f_size*args.tick_size)
+        plt.plot(x, y[name], label=name)
+    plt.legend()
     if args.y_lim is not None:
         plt.ylim(args.y_lim)
-    plt.xticks(fontsize=args.f_size*args.tick_size)
-    plt.xlabel("Distance to Target (m)", fontsize=args.f_size)
-    plt.ylabel("Time to Kill (ms)", fontsize=args.f_size)
+    plt.xlabel("Distance to Target (m)")
+    plt.ylabel("Time to Kill (ms)")
     fig_title = man_bit_plot.ttk_plot_title(title_list,
                                             dam_type,
                                             args.fig_name)
-    plt.title(fig_title, fontsize=args.f_size)
+    plt.title(fig_title)
     figs.append((fig, fig_title))
 
 if args.save is not None:
