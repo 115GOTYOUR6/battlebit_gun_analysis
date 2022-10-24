@@ -57,7 +57,7 @@ parser.add_argument('--f_size', type=int, default=20,
 parser.add_argument('--tick_size', type=float, default=0.8,
                     help="The relative axis tick font size compared to the"
                     " given 'f_size'.")
-parser.add_argument('--num_points', type=int, default=200,
+parser.add_argument('--num_points', type=int, default=150,
                     help="The number of points to use on the charts. A higher"
                     " value will increase the resolution of the lines, so"
                     " increase this if the plot isn't smooth where it should"
@@ -87,22 +87,18 @@ mpl.rcParams['axes.labelsize'] = args.f_size
 mpl.rcParams['legend.loc'] = "lower right"
 mpl.rcParams['legend.fontsize'] = args.f_size
 
-# TODO: this really needs to be read in from a file
-# also TODO: work out what is taking up all the time. A wrapper to calculate
-# the time would be ideal.
+# this function only takes 1 second! all the time comes from the calculation
+# of plot points
 bez_exprs = gen_arsenal.bez_expressions(arsenal, valid_weaps, args.bez_offset)
 
 figs = []
+x = np.linspace(args.range[0], args.range[1], args.num_points)
 for dam_type in args.dam_type:
-    x = np.linspace(args.range[0], args.range[1], args.num_points)
-    y = {}
     fig = plt.figure(tight_layout=True)
     for g_type, name in valid_weaps:
-        y[name] = np.array([arsenal[g_type][name].bez_ttk(j,
-                                                          dam_type,
-                                                          bez_exprs)
-                            for j in x])
-        plt.plot(x, y[name], label=name)
+        y = np.array([arsenal[g_type][name].bez_ttk(j, dam_type, bez_exprs)
+                      for j in x])
+        plt.plot(x, y, label=name)
     plt.legend()
     if args.y_lim is not None:
         plt.ylim(args.y_lim)

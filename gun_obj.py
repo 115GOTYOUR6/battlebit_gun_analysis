@@ -189,9 +189,6 @@ class Gun(object):
         """
         Returns the damage a bullet will do at the given distance.
         """
-        # TODO: make this more optimised. There is no reason to generate a
-        # curve everytime you calculate a single damage value with the same
-        # damage model
         dam = self.get_dam(dam_type)
         if dist <= self.dam_prof[0][0]:
             return dam * self.dam_prof[0][1]
@@ -517,18 +514,6 @@ class Fal(Ar):
         self.aim_down = 0.22
 
 
-class Pp19(Ar):
-    def __init__(self):
-        Ar.__init__(self)
-        self.val_barrels = np.array([])
-        self.bod_dam = 25
-        self.ar_dam = 25
-        self.dam_prof = [(50, 1), (200, self.MIN_CO)]
-        self.rof = 750
-        self.velocity = 400
-        self.aim_down = 0.20
-
-
 class G36c(Ar):
     def __init__(self):
         Ar.__init__(self)
@@ -643,6 +628,18 @@ class Mp5(Smg):
         self.rof = 800
         self.velocity = 400
         self.aim_down = 0.2
+
+
+class Pp19(Smg):
+    def __init__(self):
+        Ar.__init__(self)
+        self.val_barrels = np.array([])
+        self.bod_dam = 25
+        self.ar_dam = 25
+        self.dam_prof = [(50, 1), (200, self.MIN_CO)]
+        self.rof = 750
+        self.velocity = 400
+        self.aim_down = 0.20
 
 
 ###################################################################

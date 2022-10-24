@@ -77,7 +77,6 @@ def naked():
     guns["AR"]["AUG_A3"] = gun_obj.AugA3()
     guns["AR"]["SG550"] = gun_obj.Sg550()
     guns["AR"]["FAL"] = gun_obj.Fal()
-    guns["AR"]["PP19"] = gun_obj.Pp19()
     guns["AR"]["G36C"] = gun_obj.G36c()
     guns["AR"]["FAMAS"] = gun_obj.Famas()
     guns["AR"]["HK419"] = gun_obj.Hk419()
@@ -90,6 +89,7 @@ def naked():
     guns["SMG"]["PP2000"] = gun_obj.Pp2000()
     guns["SMG"]["KRISS_VECTOR"] = gun_obj.KrissVector()
     guns["SMG"]["MP5"] = gun_obj.Mp5()
+    guns["SMG"]["PP19"] = gun_obj.Pp19()
 
     guns["PDW"]["HONEY_BADGER"] = gun_obj.HoneyBadger()
     guns["PDW"]["P90"] = gun_obj.P90()
