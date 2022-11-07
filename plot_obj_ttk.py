@@ -38,6 +38,8 @@ parser.add_argument("--bez_offset", type=float, default=0.15,
                     " guns in their damage falloff range. This value should"
                     " be set such that the gun damage is accurate to the"
                     " game data.")
+parser.add_argument("--inc_ads", type=bool, default=False,
+                    help="Bool: Include the ads time in the ttk calculation")
 
 parser.add_argument('--y_lim', type=tuple, default=(100, 900),
                     help="Sets the y axis limits. Set this to None if you want"
@@ -96,8 +98,12 @@ x = np.linspace(args.range[0], args.range[1], args.num_points)
 for dam_type in args.dam_type:
     fig = plt.figure(tight_layout=True)
     for g_type, name in valid_weaps:
-        y = np.array([arsenal[g_type][name].bez_ttk(j, dam_type, bez_exprs)
-                      for j in x])
+        # this feels like a dumb function but idk...
+        ads_time = man_bit_plot.inc_ads_time(args.inc_ads,
+                                             arsenal[g_type][name].aim_down)
+        y = np.array(
+            [arsenal[g_type][name].bez_ttk(j, dam_type, bez_exprs, ads_time)
+             for j in x])
         plt.plot(x, y, label=name)
     plt.legend()
     if args.y_lim is not None:
@@ -106,7 +112,9 @@ for dam_type in args.dam_type:
     plt.ylabel("Time to Kill (ms)")
     fig_title = man_bit_plot.ttk_plot_title(title_list,
                                             dam_type,
-                                            args.fig_name)
+                                            fig_name=args.fig_name,
+                                            ads_time=args.inc_ads
+                                            )
     plt.title(fig_title)
     figs.append((fig, fig_title))
 

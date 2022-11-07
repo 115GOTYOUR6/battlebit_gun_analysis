@@ -214,7 +214,7 @@ class Gun(object):
         """
         return ceil(100/self.bez_shot_dam(dist, dam_type, bez_exprs=bez_exprs))
 
-    def bez_ttk(self, dist, dam_type, bez_exprs=None):
+    def bez_ttk(self, dist, dam_type, bez_exprs=None, ads_time=0):
         """
         Returns the time to kill a full health opponent.
         """
@@ -225,7 +225,7 @@ class Gun(object):
                                       dam_type,
                                       bez_exprs=bez_exprs) - 1))
         tof = dist/self.velocity*1000
-        return shoot_time + tof
+        return shoot_time + tof + ads_time*1000
 
     def lin_shot_dam(self, dist, dam_type):
         """
