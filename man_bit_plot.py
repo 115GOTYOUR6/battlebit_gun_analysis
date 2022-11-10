@@ -6,10 +6,11 @@
 def ttk_plot_title(title_list, dam_type, fig_name=None, ads_time=False):
     # Return the plot title
     if fig_name is None:
-        return (f"Time to Kill {str_ads(ads_time)}{dam_type} "
-                + ' '.join(title_list))
+        return ("Time to Kill " + ' '.join(title_list)
+                + f" {str_ads(ads_time)}{dam_type}")
     else:
-        return f"Time to Kill {str_ads(ads_time)}{dam_type} " + fig_name
+        return ("Time to Kill " + fig_name
+                + f" {str_ads(ads_time)}{dam_type}")
 
 
 def str_ads(x):
