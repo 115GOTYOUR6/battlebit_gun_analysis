@@ -1,7 +1,7 @@
 import gun_obj
 import argparse
 from pprint import pprint
-import weapon_organiser
+import gen_arsenal
 
 
 parser = argparse.ArgumentParser(description="Determine if the given"
@@ -26,7 +26,7 @@ args = parser.parse_args()
 #     arsenal = pickle.load(f)
 
 
-arsenal = weapon_organiser.get_arsenal("naked")
+arsenal = gen_arsenal.get_arsenal("naked")
 
 if args.attach == "HeavyBarrel":
     attachments = [gun_obj.HeavyBarrel, gun_obj.Ranger]
@@ -36,12 +36,12 @@ elif args.attach == "LongBarrel":
 ret = {}
 for g_type in arsenal:
     for g_name in arsenal[g_type].keys():
-        before = arsenal[g_type][g_name].btk(0, "bod_dam")
+        before = arsenal[g_type][g_name].bez_btk(0, "bod_dam")
         for attach in attachments:
             if attach in arsenal[g_type][g_name].val_barrels:
                 arsenal[g_type][g_name].swap_attach(attach.TYPE, attach)
 
-        after = arsenal[g_type][g_name].btk(0, "bod_dam")
+        after = arsenal[g_type][g_name].bez_btk(0, "bod_dam")
         ret[g_name] = (before != after)
 
 pprint(ret)
