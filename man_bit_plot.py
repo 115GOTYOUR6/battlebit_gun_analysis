@@ -14,12 +14,10 @@ def ttk_plot_title(title_list, dam_type, fig_name=None, ads_time=False):
 
 
 def str_ads(x):
-    if x:
-        return "+ ads "
-    else:
-        return ""
+    return "+ ads " if x else ""
 
 
+# depreciated
 def inc_ads_time(x, ads_time):
     # Return weap ads time on True
     if x:

@@ -4,6 +4,7 @@ vir_*
 *.swp
 notes.txt
 guide_testing_methods.txt
+.vscode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

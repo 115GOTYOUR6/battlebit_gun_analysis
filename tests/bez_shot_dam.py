@@ -50,12 +50,12 @@ def calc_error(dist, ret):
 
 
 def calc_dam(dist, gun, offset=0.15):
-    lin_dam = [gun.shot_dam(i, "bod_dam") for i in dist]
-    bez_dam = [gun.bez_shot_dam(i, "bod_dam", offset=offset) for i in dist]
-
+    lin_dam = [gun.shot_dam(i, "bod_dam", model='lin') for i in dist]
+    bez_dam = [gun.shot_dam(i, "bod_dam", offset=offset) for i in dist]
     return lin_dam, bez_dam
 
 
+# yet to be implemented
 def bisect_error(dist, gun, loweroff, upperoff):
     pass
 

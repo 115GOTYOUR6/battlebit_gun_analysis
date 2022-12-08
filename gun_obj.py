@@ -136,7 +136,7 @@ class Gun(object):
         else:
             return None
 
-    def gen_bez_curve(self, offset):
+    def gen_bez_curve(self, offset=0.15):
         # Generate a curve that models the damage drop off for guns
         # Input:
         #     - offset, float: parameter determines the offset of the middle
@@ -185,7 +185,40 @@ class Gun(object):
 
         return bezier.Curve(nodes, degree=3)
 
-    def bez_shot_dam(self, dist, dam_type, offset=0.15, bez_exprs={}):
+    # Return the damage coefficint for the falloff range of weapons based
+    # on the given damage model
+    def falloff_coef(self, dist, model='bez',
+                     bez_exprs={}, offset=0.15):
+        if model == 'lin':
+            coef = self.lin_coef(dist)
+        elif model == 'bez':
+            coef = self.bez_coef(dist, offset=offset, bez_exprs=bez_exprs)
+        else:
+            print("Warning! falloff_coef received an unknown model type."
+                  " Defaulting to bezier model")
+            coef = self.bez_coef(dist, offset=offset, bez_exprs=bez_exprs)
+        return coef
+
+    # return the damage coeficient in the drop off range using linear model
+    def lin_coef(self, dist):
+        grad = ((self.dam_prof[1][1] - self.dam_prof[0][1])
+                / (self.dam_prof[1][0] - self.dam_prof[0][0]))
+        return grad * (dist - self.dam_prof[0][0]) + 1
+
+    # return the damage coeficient in the drop off range using bezier model
+    def bez_coef(self, dist, bez_exprs={}, offset=0.15):
+        key = gen_arsenal.bez_expr_key(self.dam_prof, offset)
+        if key in bez_exprs:
+            expr = bez_exprs[key]
+        else:
+            curve = self.gen_bez_curve(offset)
+            expr = curve.implicitize()
+
+        coef, = sympy.solveset(expr.evalf(subs={'x': dist}), 'y',
+                               sympy.Interval(0, 1))
+        return coef
+
+    def shot_dam(self, dist, dam_type, model='bez', bez_exprs={}, offset=0.15):
         """
         Returns the damage a bullet will do at the given distance.
         """
@@ -195,68 +228,34 @@ class Gun(object):
         elif dist >= self.dam_prof[1][0]:
             return self.dam_prof[1][1] * dam
         else:
-            key = gen_arsenal.bez_expr_key(self.dam_prof, offset)
-            if key in bez_exprs:
-                expr = bez_exprs[key]
-            else:
-                curve = self.gen_bez_curve(offset)
-                expr = curve.implicitize()
-
-            dam_coef, = sympy.solveset(expr.evalf(subs={'x': dist}), 'y',
-                                       sympy.Interval(0, 1))
-
+            dam_coef = self.falloff_coef(dist, model=model,
+                                         bez_exprs=bez_exprs, offset=offset)
             return dam * dam_coef
 
-    def bez_btk(self, dist, dam_type, bez_exprs=None):
+    def btk(self, dist, dam_type, model='bez', bez_exprs={}, offset=0.15):
         """
         Return the number of hits needed to kill a target at the given
         distance.
         """
-        return ceil(100/self.bez_shot_dam(dist, dam_type, bez_exprs=bez_exprs))
+        return ceil(100/self.shot_dam(dist, dam_type, model=model,
+                    bez_exprs=bez_exprs, offset=offset))
 
-    def bez_ttk(self, dist, dam_type, bez_exprs=None, ads_time=0):
+    def ttk(self, dist, dam_type, model='bez', bez_exprs={}, offset=0.15,
+            inc_ads=False):
         """
         Returns the time to kill a full health opponent.
         """
         # minus 1 to btk because the first shot is in the air at t = 0
         # thus, there are btk - 1 times the rof delays the kill
         shoot_time = (1/self.rof * 60000
-                      * (self.bez_btk(dist,
-                                      dam_type,
-                                      bez_exprs=bez_exprs) - 1))
+                      * (self.btk(dist,
+                                  dam_type,
+                                  model=model,
+                                  bez_exprs=bez_exprs) - 1))
         tof = dist/self.velocity*1000
+        ads_time = self.aim_down if inc_ads else 0
+
         return shoot_time + tof + ads_time*1000
-
-    def lin_shot_dam(self, dist, dam_type):
-        """
-        Returns the damage a bullet will do at the given distance.
-        """
-        dam = self.get_dam(dam_type)
-        if dist <= self.dam_prof[0][0]:
-            return dam
-        elif dist >= self.dam_prof[1][0]:
-            return self.dam_prof[1][1] * dam
-        else:
-            grad = ((self.dam_prof[1][1] - self.dam_prof[0][1])
-                    / (self.dam_prof[1][0] - self.dam_prof[0][0]))
-            return dam * (grad * (dist - self.dam_prof[0][0]) + 1)
-
-    def lin_btk(self, dist, dam_type):
-        """
-        Return the number of hits needed to kill a target at the given
-        distance.
-        """
-        return ceil(100/self.lin_shot_dam(dist, dam_type))
-
-    def lin_ttk(self, dist, dam_type):
-        """
-        Returns the time to kill a full health opponent.
-        """
-        # minus 1 to btk because the first shot is in the air at t = 0
-        # thus, there are btk - 1 times the rof delays the kill
-        shoot_time = 1/self.rof*60000 * (self.lin_btk(dist, dam_type) - 1)
-        tof = dist/self.velocity*1000
-        return shoot_time + tof
 
     def get_attachments(self):
         """

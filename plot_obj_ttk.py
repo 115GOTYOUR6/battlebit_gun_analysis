@@ -115,11 +115,12 @@ for dam_type in args.dam_type:
     fig = plt.figure(tight_layout=True)
     for g_type, name in valid_weaps:
         # this feels like a dumb function but idk...
-        ads_time = man_bit_plot.inc_ads_time(args.inc_ads,
-                                             arsenal[g_type][name].aim_down)
+        # ads_time = man_bit_plot.inc_ads_time(args.inc_ads,
+        #                                      arsenal[g_type][name].aim_down)
         y = np.array(
-            [arsenal[g_type][name].bez_ttk(j, dam_type, bez_exprs, ads_time)
-             for j in x])
+            [arsenal[g_type][name].ttk(j, dam_type, model='bez',
+                                       bez_exprs=bez_exprs,
+                                       inc_ads=args.inc_ads) for j in x])
         plt.plot(x, y, label=name)
     plt.legend()
     if args.y_lim is not None:
