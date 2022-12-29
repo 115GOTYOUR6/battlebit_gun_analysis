@@ -56,8 +56,8 @@ def bez_expressions(arsenal, weaps, offset):
     expr_dict = {}
     for g_type, g_name in weaps:
         gun = arsenal[g_type][g_name]
-        key = bez_expr_key(gun.dam_prof, offset)
-        expr_dict[key] = gun.gen_bez_curve(offset).implicitize()
+        key = bez_expr_key(gun._dam_prof, offset)
+        expr_dict[key] = gun._gen_bez_curve(offset).implicitize()
 
     return expr_dict
 
@@ -135,11 +135,6 @@ def hb_lb_dat():
 
 
 def barrel_compare():
-
-    # guns = naked()
-
-    # guns["AR"].pop("AK74")
-    # guns["LMG"].pop("L86A1")
     guns = {}
     guns["AR"] = {}
     guns["LMG"] = {}
