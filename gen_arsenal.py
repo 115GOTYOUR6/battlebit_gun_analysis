@@ -1,7 +1,22 @@
-# Contains functions that generate dictionaries of gun objects
-
-
+# Contains functions that generate dictionaries of gun objects aka arsenals
 import gun_obj
+
+
+def find_gclass(arsenal, g_name):
+    """Return the keys needed to get the gun obj stored under the name g_name.
+
+    Input:
+        - arsenal, nested dict. One of the dictionaries defined in this module
+        - g_name, str. The name of the gun in the arsenal.
+    Returns:
+        - gclass, str. Gun class key the given g_name is under
+        or None if not present
+    """
+    for gclass in arsenal:
+        for key in arsenal[gclass]:
+            if g_name == key:
+                return gclass
+    return None
 
 
 def get_arsenal(data_type):
@@ -26,7 +41,9 @@ def get_arsenal(data_type):
     elif data_type == "barrel_compare":
         return barrel_compare()
     else:
-        raise ValueError
+        raise ValueError("Invalid input. Only"
+                         " 'naked', 'ttk_dat', 'hb_lb_dat', 'barrel_compare'"
+                         " are valid.")
 
 
 def bez_expr_key(dam_prof, offset):
@@ -62,6 +79,8 @@ def bez_expressions(arsenal, weaps, offset):
     return expr_dict
 
 
+# TODO: these should probably be an object of their own. You could sort guns
+# by name/damge etc within it and implement show("AR") functions and the like
 def naked():
     g_types = ["AR", "LMG", "SMG", "PDW", "CARBINE"]
 

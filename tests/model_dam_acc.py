@@ -4,36 +4,32 @@ import sys
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+from json import load
+# hack to import from previous directory
 sys.path.insert(
     0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import gun_obj
-
-
-def exact_check(x, gun_name):
-    for i in range(len(x) - 1):
-        current = x[i]
-        ne = x[i+1]
-        if current < ne:
-            raise ValueError(f"problem at index {i} {gun_name}")
+from gen_arsenal import get_arsenal, find_gclass
 
 
 def perc_error(approx, exact):
     return abs(approx - exact)/exact*100
 
 
-def calc_g_per_errors(dist, g_dict, models):
+def calc_g_perc_errors(dist, g_dict, models):
     """
     Calculate the error each gun in the dict 'g_dict' has relative to the
     exact damage values
     """
     for gun in g_dict.keys():
         for mod in models:
-            # don't judge me, I didn't want to indent the long ass line....
+            # skip the first model (exact) as this won't have any error
+            # Or like, don't give 'exact' to this function???
             if mod == models[0]:
                 continue
-            g_dict[gun][f"{mod}_error"] = [perc_error(g_dict[gun][f"{mod}_dam"][i],
-                                                      g_dict[gun][f"{models[0]}_dam"][i])
-                                           for i in range(len(dist))]
+            g_dict[gun][f"{mod}_error"] = [
+                    perc_error(g_dict[gun][f"{mod}_dam"][i],
+                               g_dict[gun][f"{models[0]}_dam"][i])
+                    for i in range(len(dist))]
 
 
 def add_g_models(g_dict, g_name, dist, real_dams, models, gun_obj,
@@ -101,66 +97,43 @@ def model_plots(gun_dict, gun_name, models, ax):
 
 ################################################################
 # IF your would like to add another weapon here you must:
-#   - add the weapon object as bellow
-#   - add a list of real damage values
-#   - ensure you add a call for add_g_models
+#   - go to gen_realdam_json.py and add them there. The gun objects will be
+#     found and added by this script
 # IF you want to include an additional damage model
 #   - simply add it to the existing list 'models'
 
-HK_HB = gun_obj.Hk419()
-HK_HB.swap_attach("barrel", gun_obj.HeavyBarrel)
-AK_HB = gun_obj.Ak74()
-AK_HB.swap_attach("barrel", gun_obj.HeavyBarrel)
-MP5 = gun_obj.Mp5()
-
-# there should be 26 measurements for all the weapons featured here.
-# this is all real data, recorded in game.
-dist = [i for i in range(50, 301, 10)]
-ak74_rdam = [36.30, 36.18, 35.84, 35.32, 34.68,
-             33.81, 32.78, 31.74, 30.54, 29.25,
-             27.99, 26.49, 25.13, 23.69, 22.35,
-             20.91, 19.63, 18.34, 17.15, 16.06,
-             15.11, 14.25, 13.59, 13.12, 12.81,
-             12.71]
-hk419_rdam = [34.10, 33.98, 33.67, 33.17, 32.51,
-              31.76, 30.88, 29.80, 28.70, 27.49,
-              26.27, 24.96, 23.60, 22.26, 21.02,
-              19.62, 18.47, 17.39, 16.11, 15.13,
-              14.23, 13.45, 12.82, 12.33, 12.04,
-              11.94]
-mp5_rdam = [26.00, 25.73, 24.97, 23.96, 22.57,
-            20.87, 19.02, 17.09, 15.27, 13.27,
-            11.54, 9.88, 8.67, 7.41, 6.73,
-            6.5, 6.5, 6.5, 6.5, 6.5,
-            6.5, 6.5, 6.5, 6.5, 6.5,
-            6.5]
-
-# sanity checking recorded data
-exact_check(ak74_rdam, "ak74")
-exact_check(hk419_rdam, "hk")
-exact_check(mp5_rdam, "mp5")
+try:
+    with open("./realgundam.csv", 'r') as fp:
+        realgundict = load(fp)
+except FileNotFoundError as e:
+    raise FileNotFoundError("Make sure to run gen_realdam_json.py first! \n"
+                            f"{e}")
+gunstoplot = [i for i in realgundict.keys() if i != 'dist']
+dist = realgundict['dist']
 
 # the first element must be the name of the exact damage values for the guns
 # like those given above!
 models = ["exact", 'lin', 'bez']
 # offset for bezier modelling.
 offset = 0.15
+plot_dict = {}
+arsn_dict = get_arsenal('ttk_dat')
+for g_name in gunstoplot:
+    # gun is the gun object
+    gun = arsn_dict[find_gclass(arsn_dict, g_name)][g_name]
+    add_g_models(plot_dict, g_name, realgundict['dist'], realgundict[g_name],
+                 models, gun, offset=offset)
 
-g_dict = {}
-add_g_models(g_dict, "HK_HB", dist, hk419_rdam, models, HK_HB, offset=offset)
-add_g_models(g_dict, "AK_HB", dist, ak74_rdam, models, AK_HB, offset=offset)
-add_g_models(g_dict, "MP5", dist, mp5_rdam, models, MP5, offset=offset)
-
-calc_g_per_errors(dist, g_dict, models)
-print_res(dist, g_dict, models)
+calc_g_perc_errors(dist, plot_dict, models)
+print_res(dist, plot_dict, models)
 
 plot = True
 if plot:
     fig = plt.figure(figsize=(19.2, 10.8))
-    axs = fig.subplots(1, len(g_dict.keys()))
+    axs = fig.subplots(1, len(plot_dict.keys()))
 
     mod_num = 0
-    for key in g_dict.keys():
-        axs[mod_num] = model_plots(g_dict, key, models, axs[mod_num])
+    for key in plot_dict.keys():
+        axs[mod_num] = model_plots(plot_dict, key, models, axs[mod_num])
         mod_num += 1
     plt.show()

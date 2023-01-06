@@ -2,6 +2,7 @@
 plots/
 vir_*
 *.swp
+*.csv
 notes.txt
 guide_testing_methods.txt
 .vscode/
