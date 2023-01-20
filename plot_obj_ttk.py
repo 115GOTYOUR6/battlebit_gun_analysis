@@ -24,6 +24,7 @@ parser.add_argument('weapons', type=str, nargs='+',
                     " include in the figure. See the file 'gen_arsenal' for"
                     " the names of things or to create your own set of guns!")
 
+# data configuration
 parser.add_argument('--dam_type', type=list, nargs='*',
                     default=["ar_dam", "bod_dam"],
                     choices=["ar_dam", "bod_type"],
@@ -42,7 +43,13 @@ parser.add_argument("--bez_offset", type=float, default=0.15,
                     " game data.")
 parser.add_argument("--inc_ads", type=bool, default=False,
                     help="Bool: Include the ads time in the ttk calculation")
+parser.add_argument("--model", type=str,
+                    default="cub",
+                    choices=["lin", "bez", "cub"],
+                    help="The model used to predict the damage of guns in"
+                         " falloff range")
 
+# figure customisation
 parser.add_argument('--y_lim', type=int, default=[0, 900], nargs='+',
                     help="Sets the y axis limits (min and max). Set this to"
                     " None if you want matplotlib to do it for you")
@@ -119,7 +126,7 @@ for dam_type in args.dam_type:
         # ads_time = man_bit_plot.inc_ads_time(args.inc_ads,
         #                                      arsenal[g_type][name].aim_down)
         y = np.array(
-            [arsenal[g_type][name].ttk(j, dam_type, model='bez',
+            [arsenal[g_type][name].ttk(j, dam_type, model=args.model,
                                        bez_exprs=bez_exprs,
                                        inc_ads=args.inc_ads) for j in x])
         plt.plot(x, y, label=name)

@@ -266,7 +266,7 @@ class Gun(object):
 
         return bezier.Curve(nodes, degree=3)
 
-    def _falloff_coef(self, dist, model='bez',
+    def _falloff_coef(self, dist, model='cub',
                       bez_exprs={}, offset=0.15):
         # Return the damage coefficient for a distance within the falloff range
         # of weapons based on the given damage model
@@ -274,6 +274,8 @@ class Gun(object):
             coef = self._lin_coef(dist)
         elif model == 'bez':
             coef = self._bez_coef(dist, offset=offset, bez_exprs=bez_exprs)
+        elif model == 'cub':
+            coef = self._cubic_coef(dist)
         else:
             print("Warning! falloff_coef received an unknown model type."
                   " Defaulting to bezier model")
@@ -299,7 +301,33 @@ class Gun(object):
                                sympy.Interval(0, 1))
         return coef
 
-    def shot_dam(self, dist, dam_type, model='bez', bez_exprs={}, offset=0.15):
+    def _cubic_coef(self, dist):
+        # The damage coefficient function here runs from x=0 to x=250. Thus,
+        # we must offset the falloff distance to x=0 for the gun by subtracting
+        # its starting falloff value
+        dist -= self._dam_prof[0][0]
+
+        # because we go from 0 to 250, any guns that have a shorter falloff
+        # interval will require the domain of the cubic func to be scaled
+        xcalcedrange = [50, 300]  # this is the domain of the cubic regression
+        xrange = [m for m, n in self._dam_prof]  # falloff interval for gun
+        xscale = (xcalcedrange[1] - xcalcedrange[0])/(xrange[1] - xrange[0])
+
+        # the y axis may also need scaling depending on _MIN_CO
+        ycalcedrange = 0.35
+        yrange = self._MIN_CO  # 0.25 for smgs
+        # this is derived from a simultanous equation:
+        # f(250)*m + c = 0.25
+        # f(0)*m + c = 1
+        yscale = (yrange - 1)/(ycalcedrange - 1)  # this is m
+        coef = (8.353*10**(-8)*(xscale*dist)**3
+                - 3.119*10**(-5)*(xscale*dist)**2
+                - 2.281*10**(-5)*(xscale*dist)
+                + 1)
+        #        m    * f(x) + (   c    )
+        return yscale * coef + 1 - yscale
+
+    def shot_dam(self, dist, dam_type, model='cub', bez_exprs={}, offset=0.15):
         """
         Returns the damage a bullet will do at the given distance.
 
@@ -323,7 +351,7 @@ class Gun(object):
                                           bez_exprs=bez_exprs, offset=offset)
             return dam * dam_coef
 
-    def btk(self, dist, dam_type, model='bez', bez_exprs={}, offset=0.15):
+    def btk(self, dist, dam_type, model='cub', bez_exprs={}, offset=0.15):
         """
         Return the number of hits needed to kill a target from full health at
         the given distance.
@@ -341,7 +369,7 @@ class Gun(object):
         return ceil(100/self.shot_dam(dist, dam_type, model=model,
                     bez_exprs=bez_exprs, offset=offset))
 
-    def ttk(self, dist, dam_type, model='bez', bez_exprs={}, offset=0.15,
+    def ttk(self, dist, dam_type, model='cub', bez_exprs={}, offset=0.15,
             inc_ads=False):
         """
         Returns the time to kill a full health opponent.

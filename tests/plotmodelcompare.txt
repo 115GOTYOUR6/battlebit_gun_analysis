@@ -1,0 +1,20 @@
+bez AR
+
+real	0m22.644s
+user	0m22.946s
+sys	0m0.780s
+bez SMG PDW
+
+real	0m48.717s
+user	0m48.908s
+sys	0m0.776s
+cub AR
+
+real	0m2.594s
+user	0m2.863s
+sys	0m0.821s
+cub SMG PDW
+
+real	0m2.556s
+user	0m2.883s
+sys	0m0.802s

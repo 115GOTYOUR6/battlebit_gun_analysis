@@ -22,8 +22,7 @@ def calc_g_perc_errors(dist, g_dict, models):
     """
     for gun in g_dict.keys():
         for mod in models:
-            # skip the first model (exact) as this won't have any error
-            # Or like, don't give 'exact' to this function???
+            # skip the first model ('exact') as this won't have any error
             if mod == models[0]:
                 continue
             g_dict[gun][f"{mod}_error"] = [
@@ -32,16 +31,16 @@ def calc_g_perc_errors(dist, g_dict, models):
                     for i in range(len(dist))]
 
 
-def add_g_models(g_dict, g_name, dist, real_dams, models, gun_obj,
+def add_g_models(g_dict, g_name, realgundict, models, gun_obj,
                  offset=0.15):
     """Add the damage values inplace for each model for the given weapon"""
     g_dict[g_name] = {}
     for mod in models:
         if mod == models[0]:
-            g_dict[g_name][f"{models[0]}_dam"] = real_dams
+            g_dict[g_name][f"{models[0]}_dam"] = realgundict[g_name]
         else:
-            g_dict[g_name][f"{mod}_dam"] = calc_dam(dist, mod, gun_obj,
-                                                    offset=offset)
+            g_dict[g_name][f"{mod}_dam"] = calc_dam(realgundict['dist'], mod,
+                                                    gun_obj, offset=offset)
 
 
 def calc_dam(dist, model, gun, offset=0.15):
@@ -50,15 +49,10 @@ def calc_dam(dist, model, gun, offset=0.15):
     return dam_vals
 
 
-# yet to be implemented
-def bisect_error(dist, gun, loweroff, upperoff):
-    pass
-
-
 def print_res(dist, ret, models, spacing=8):
     """
     print a table on stdout showing the error each model has at various
-    points to the damage values recorded from the game.
+    points compared to the damage values recorded from the game.
     """
     # the first element of the models array is the exact damage values.
     # we dont want to print the errors for these cuz they are 0.
@@ -113,7 +107,7 @@ dist = realgundict['dist']
 
 # the first element must be the name of the exact damage values for the guns
 # like those given above!
-models = ["exact", 'lin', 'bez']
+models = ["exact", 'lin', 'bez', 'cub']
 # offset for bezier modelling.
 offset = 0.15
 plot_dict = {}
@@ -121,7 +115,7 @@ arsn_dict = get_arsenal('ttk_dat')
 for g_name in gunstoplot:
     # gun is the gun object
     gun = arsn_dict[find_gclass(arsn_dict, g_name)][g_name]
-    add_g_models(plot_dict, g_name, realgundict['dist'], realgundict[g_name],
+    add_g_models(plot_dict, g_name, realgundict,
                  models, gun, offset=offset)
 
 calc_g_perc_errors(dist, plot_dict, models)
