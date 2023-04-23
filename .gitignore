@@ -4,8 +4,10 @@ vir_*
 *.swp
 *.csv
 notes.txt
+todo.txt
 guide_testing_methods.txt
 .vscode/
+*.xcf
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

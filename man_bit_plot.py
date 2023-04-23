@@ -1,26 +1,26 @@
-"""
-    Module containing formatting for battlebit weapon plots.
-"""
+"""Module containing formatting for battlebit matplotlib weapon figures."""
 
 
 def ttk_plot_title(title_list, dam_type, fig_name=None, ads_time=False):
-    # Return the plot title
+    """Return the ttk plot title.
+
+    Inputs:
+    -------
+    title_list  -- list of strings of weapon names or weapon class names
+    dam_type    -- damage type string, either "bod_dam" or "ar_dam"
+
+    Keyword Arguments:
+    ------------------
+    fig_name    -- figure name string, default None
+    ads_time    -- boolean that include '+ ads' in the title, default False
+    """
     if fig_name is None:
         return ("Time to Kill " + ' '.join(title_list)
                 + f" {str_ads(ads_time)}{dam_type}")
-    else:
-        return ("Time to Kill " + fig_name
-                + f" {str_ads(ads_time)}{dam_type}")
+    return ("Time to Kill " + fig_name
+            + f" {str_ads(ads_time)}{dam_type}")
 
 
-def str_ads(x):
-    return "+ ads " if x else ""
-
-
-# depreciated
-def inc_ads_time(x, ads_time):
-    # Return weap ads time on True
-    if x:
-        return ads_time
-    else:
-        return 0
+def str_ads(include_ads_string):
+    """Return string for ads time on True."""
+    return "+ ads " if include_ads_string else ""

@@ -1,20 +1,37 @@
-import gun_obj
+"""Script to test if a given attachment will change the btk of a weapon."""
+
+
 import argparse
 from pprint import pprint
-import gen_arsenal
+import preset_arsenals
+import gun_obj
+
+
+def return_synonymous_attachments(attachment):
+    """Return a list of attachments that are synonymous with the given name."""
+    if attachment == "HeavyBarrel":
+        return [gun_obj.HeavyBarrel, gun_obj.Ranger]
+    if attachment == "LongBarrel":
+        return [gun_obj.LongBarrel]
+    return None
+
+def report_btk_change_for_guns(attachments, all_guns):
+    """Return a dictionary of bools that is True if btk for the gun changes."""
+    ret = {}
+    for gun in all_guns:
+        before = gun.btk(0, "bod_dam")
+        for attach in attachments:
+            if attach in gun.val_barrels:
+                gun.swap_attach(attach.TYPE, attach)
+
+        after = gun.btk(0, "bod_dam")
+        ret[gun.name] = (before != after)
+    return ret
 
 
 parser = argparse.ArgumentParser(description="Determine if the given"
                                  " attachment will change the number of"
                                  " bullets required to kill a target.")
-# parser.add_argument('file', type=str,
-#                     help="The path to the file containing a dictionary. This"
-#                     " dictionary should contain all the weapon property"
-#                     " values. Point to the file containing the weapons with"
-#                     " no attachments pls.")
-# parser.add_argument('data', type=str,
-#                     choices=["naked"],
-#                     help="The data to use in the plots.")
 parser.add_argument('attach', type=str, choices=["HeavyBarrel", "LongBarrel"],
                     help="Check if the given attachment will change the ttk"
                     " on any of the guns contained in the file given. Note"
@@ -22,26 +39,10 @@ parser.add_argument('attach', type=str, choices=["HeavyBarrel", "LongBarrel"],
                     " on those weapons that don't take the heavy.")
 args = parser.parse_args()
 
-# with open(args.file, 'br') as f:
-#     arsenal = pickle.load(f)
+arsenal = preset_arsenals.ARSENALS["naked"]()
+attachments = return_synonymous_attachments(args.attach)
 
-
-arsenal = gen_arsenal.get_arsenal("naked")
-
-if args.attach == "HeavyBarrel":
-    attachments = [gun_obj.HeavyBarrel, gun_obj.Ranger]
-elif args.attach == "LongBarrel":
-    attachments = [gun_obj.LongBarrel]
-
-ret = {}
-for g_type in arsenal:
-    for g_name in arsenal[g_type].keys():
-        before = arsenal[g_type][g_name].btk(0, "bod_dam")
-        for attach in attachments:
-            if attach in arsenal[g_type][g_name].val_barrels:
-                arsenal[g_type][g_name].swap_attach(attach.TYPE, attach)
-
-        after = arsenal[g_type][g_name].btk(0, "bod_dam")
-        ret[g_name] = (before != after)
+all_guns = arsenal.get_all_guns()
+ret = report_btk_change_for_guns(attachments, all_guns)
 
 pprint(ret)

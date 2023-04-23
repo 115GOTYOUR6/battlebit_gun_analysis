@@ -3,21 +3,15 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
 
-import weapon_organiser
-import gen_arsenal
+import arsenal
 import file_sys
 import man_bit_plot
+from preset_arsenals import ARSENALS
 
 parser = argparse.ArgumentParser(description="Generate ttk plots for the"
                                  " given weapon and damage types.")
-# see note below on why this is commented out
-# parser.add_argument('file', type=str,
-#                     help="The path to the file containing a dictionary. This"
-#                     " dictionary should contain all the weapon property"
-#                     " values.")
 parser.add_argument('data', type=str,
-                    choices=["naked", "ttk_dat", "hb_lb_dat",
-                             "barrel_compare"],
+                    choices=list(ARSENALS.keys()),
                     help="The data to use in the plots.")
 parser.add_argument('weapons', type=str, nargs='+',
                     help="The names of weapons or the class of weapons to"
@@ -35,19 +29,8 @@ parser.add_argument('--range', type=int, default=[0, 150], nargs='+',
                     help="The range of distance to target values used for the"
                     " charts. Give 2 values with the first being min. Note"
                     " that this will also set the x axis range.")
-parser.add_argument("--bez_offset", type=float, default=0.15,
-                    help="float value. This will set the offset of the bezier"
-                    " curves used in the calculation of damage values for"
-                    " guns in their damage falloff range. This value should"
-                    " be set such that the gun damage is accurate to the"
-                    " game data.")
 parser.add_argument("--inc_ads", type=bool, default=False,
                     help="Bool: Include the ads time in the ttk calculation")
-parser.add_argument("--model", type=str,
-                    default="cub",
-                    choices=["lin", "bez", "cub"],
-                    help="The model used to predict the damage of guns in"
-                         " falloff range")
 
 # figure customisation
 parser.add_argument('--y_lim', type=int, default=[0, 900], nargs='+',
@@ -85,6 +68,7 @@ for arg_name in double_val_args:
     arg_len = len(double_val_args[arg_name])
     if arg_len != 2:
         raise ValueError(f"argument {arg_name} has {arg_len} values instead of"
+                         # TODO magic constant
                          " 2. Please ensure only two values (a min and max)"
                          " are given.")
     if arg_name != "fig_size":
@@ -94,16 +78,9 @@ for arg_name in double_val_args:
                              " the second value given to this parameter is"
                              " larger than the first")
 
-# pickle is doing weird shit, you will need to work it out
-# the values for some weapons were changing, such as the ump45 rof.
-# with open(args.file, 'br') as f:
-#     arsenal = pickle.load(f)
+arsenal = ARSENALS[args.data]()
+valid_weaps, title_list = arsenal.get_guns_or_types_and_return_valid_names(args.weapons)
 
-arsenal = gen_arsenal.get_arsenal(args.data)
-valid_weaps, title_list = weapon_organiser.plot_info(args.weapons, arsenal)
-
-if args.dark_mode:
-    plt.style.use('dark_background')
 mpl.rcParams['lines.linewidth'] = 2.5
 mpl.rcParams['figure.figsize'] = args.fig_size
 mpl.rcParams['xtick.labelsize'] = args.f_size*args.tick_size
@@ -112,24 +89,19 @@ mpl.rcParams['axes.titlesize'] = args.f_size
 mpl.rcParams['axes.labelsize'] = args.f_size
 mpl.rcParams['legend.loc'] = "lower right"
 mpl.rcParams['legend.fontsize'] = args.f_size
-
-# this function only takes 1 second! all the time comes from the calculation
-# of plot points (sympy.solveset)
-bez_exprs = gen_arsenal.bez_expressions(arsenal, valid_weaps, args.bez_offset)
+if args.dark_mode:
+    plt.style.use('dark_background')
 
 figs = []
 x = np.linspace(args.range[0], args.range[1], args.num_points)
+# TODO: Remove dam_type
 for dam_type in args.dam_type:
     fig = plt.figure(tight_layout=True)
-    for g_type, name in valid_weaps:
-        # this feels like a dumb function but idk...
-        # ads_time = man_bit_plot.inc_ads_time(args.inc_ads,
-        #                                      arsenal[g_type][name].aim_down)
+    for gun in valid_weaps:
         y = np.array(
-            [arsenal[g_type][name].ttk(j, dam_type, model=args.model,
-                                       bez_exprs=bez_exprs,
-                                       inc_ads=args.inc_ads) for j in x])
-        plt.plot(x, y, label=name)
+            [gun.ttk(j, dam_type,
+                     inc_ads=args.inc_ads) for j in x])
+        plt.plot(x, y, label=gun.name)
     plt.legend()
     if args.y_lim is not None:
         plt.ylim(args.y_lim)
