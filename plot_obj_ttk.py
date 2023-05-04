@@ -1,3 +1,5 @@
+"""Script to plot weapon ttk over distance for guns."""
+
 import argparse
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -19,12 +21,6 @@ parser.add_argument('weapons', type=str, nargs='+',
                     " the names of things or to create your own set of guns!")
 
 # data configuration
-parser.add_argument('--dam_type', type=list, nargs='*',
-                    default=["ar_dam", "bod_dam"],
-                    choices=["ar_dam", "bod_type"],
-                    help="The damage type to generate ttk charts for."
-                    " 'bod_dam'(body damage) and 'ar_dam'(armour damage) are"
-                    " currently supported.")
 parser.add_argument('--range', type=int, default=[0, 150], nargs='+',
                     help="The range of distance to target values used for the"
                     " charts. Give 2 values with the first being min. Note"
@@ -42,7 +38,7 @@ parser.add_argument('--fig_size', type=float, default=[19.2, 10.8],
                     " 100 gives an image resolution.")
 parser.add_argument('--fig_name', type=str, default=None,
                     help="Set a custom name for the plot(s) generated. Note"
-                    " that 'Time to kill [dam_type]' is always suffixed")
+                    " that 'Time to kill' is always suffixed")
 parser.add_argument('--dark_mode', type=bool, default=True,
                     help="Use matplotlib dark mode.")
 parser.add_argument('--f_size', type=int, default=20,
@@ -62,6 +58,7 @@ parser.add_argument('--save', type=str, default=None,
                     " will display the graphs in interactive mode.")
 args = parser.parse_args()
 
+# TODO: object?
 double_val_args = {"fig_size": args.fig_size, "y_lim": args.y_lim,
                    "range": args.range}
 for arg_name in double_val_args:
@@ -81,39 +78,34 @@ for arg_name in double_val_args:
 arsenal = ARSENALS[args.data]()
 valid_weaps, title_list = arsenal.get_guns_or_types_and_return_valid_names(args.weapons)
 
-mpl.rcParams['lines.linewidth'] = 2.5
+mpl.rcParams['lines.linewidth'] = 2.5   # TODO: magic const...
 mpl.rcParams['figure.figsize'] = args.fig_size
 mpl.rcParams['xtick.labelsize'] = args.f_size*args.tick_size
 mpl.rcParams['ytick.labelsize'] = args.f_size*args.tick_size
 mpl.rcParams['axes.titlesize'] = args.f_size
 mpl.rcParams['axes.labelsize'] = args.f_size
-mpl.rcParams['legend.loc'] = "lower right"
+mpl.rcParams['legend.loc'] = "lower right"  # TODO: magic const...
 mpl.rcParams['legend.fontsize'] = args.f_size
 if args.dark_mode:
     plt.style.use('dark_background')
 
 figs = []
 x = np.linspace(args.range[0], args.range[1], args.num_points)
-# TODO: Remove dam_type
-for dam_type in args.dam_type:
-    fig = plt.figure(tight_layout=True)
-    for gun in valid_weaps:
-        y = np.array(
-            [gun.ttk(j, dam_type,
-                     inc_ads=args.inc_ads) for j in x])
-        plt.plot(x, y, label=gun.name)
-    plt.legend()
-    if args.y_lim is not None:
-        plt.ylim(args.y_lim)
-    plt.xlabel("Distance to Target (m)")
-    plt.ylabel("Time to Kill (ms)")
-    fig_title = man_bit_plot.ttk_plot_title(title_list,
-                                            dam_type,
-                                            fig_name=args.fig_name,
-                                            ads_time=args.inc_ads
-                                            )
-    plt.title(fig_title)
-    figs.append((fig, fig_title))
+fig = plt.figure(tight_layout=True)
+for gun in valid_weaps:
+    y = np.array([gun.ttk(j, inc_ads=args.inc_ads) for j in x])
+    plt.plot(x, y, label=gun.name)
+plt.legend()
+if args.y_lim is not None:
+    plt.ylim(args.y_lim)
+plt.xlabel("Distance to Target (m)")
+plt.ylabel("Time to Kill (ms)")
+fig_title = man_bit_plot.ttk_plot_title(title_list,
+                                        fig_name=args.fig_name,
+                                        ads_time=args.inc_ads
+                                        )
+plt.title(fig_title)
+figs.append((fig, fig_title))
 
 if args.save is not None:
     path = file_sys.create_path(args.save)

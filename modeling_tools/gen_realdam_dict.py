@@ -57,6 +57,7 @@ def _delete_guns_with_invalid_data(guns, real_damage_key):
     for invalid_gun in invalid_guns:
         del guns[invalid_gun]
 
+# TODO: perhaps make this a class too?
 def generate_real_damage_dict():
     """Return a dictionary of real damage values for each gun.
 

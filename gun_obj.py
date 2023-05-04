@@ -33,21 +33,9 @@
             AsVal
 """
 
-import unittest
+
 from math import ceil
 import numpy as np
-
-def offset_oneax(x1, x2, offset):
-    """Find the midpoint along one dimension."""
-    return x1 + (x2 - x1)/2 + (x2 - x1)*offset
-
-
-def dp3(x):
-    """Round number to 3 decimal points."""
-    temp = int(x*10**4)
-    if temp % 10 >= 5:
-        return (int(temp/10)+1) / 10**3
-    return int(temp/10) / 10**3
 
 
 # additions to these require the val_x arrays (list of valid attatchments for
@@ -55,8 +43,7 @@ def dp3(x):
 # attached.
 class AttachmentBaseClass():
     """Base class for all attachments."""
-    _BOD_DAM = 1
-    _AR_DAM = 1
+    _DAM = 1
     _VELOCITY = 1
     _ROF = 1
     _AIM_DOWN = 1
@@ -73,8 +60,7 @@ class BarrelBaseClass(AttachmentBaseClass):
 class HeavyBarrel(BarrelBaseClass):
     """Heavy barrel attachment."""
     NAME = "HeavyBarrel"
-    _BOD_DAM = 1.1
-    _AR_DAM = 1.1
+    _DAM = 1.1
     _VELOCITY = 1.1
 
 
@@ -83,16 +69,14 @@ class LongBarrel(BarrelBaseClass):
     Long barrel attachment.
     """
     NAME = "LongBarrel"
-    _BOD_DAM = 1.05
-    _AR_DAM = 1.1
+    _DAM = 1.05
     _VELOCITY = 1.1
 
 
 class Ranger(BarrelBaseClass):
     """Ranger barrel attachment."""
     NAME = "Ranger"
-    _BOD_DAM = 1.1
-    _AR_DAM = 1.1
+    _DAM = 1.1
     _VELOCITY = 1.1
 
 
@@ -174,6 +158,8 @@ class Gun():
     """
     def __init__(self):
         """Initialise all attachment slots with empty attachment classes"""
+        # TODO: make the attachments a set of objects. We can then initialise
+        # here with at single parameter.
         self.sight = EmptySight
         self.c_sight = EmptyCSight
         self.mag = EmptyMag
@@ -186,8 +172,7 @@ class Gun():
         if (self.sight == other.sight and self.c_sight == other.c_sight
             and self.mag == other.mag and self.s_rail == other.s_rail
             and self.u_rail == other.u_rail and self.barrel == other.barrel
-            and self._bod_dam == other._bod_dam
-            and self._ar_dam == other._ar_dam
+            and self._dam == other._dam
             and self.rof and self._dam_prof == other._dam_prof and self.velocity
             and self.aim_down):
             return True
@@ -196,19 +181,14 @@ class Gun():
     def __str__(self):
         return self.name
 
-    def get_max_base_dam(self, dam_type):
-        """Return the gun's base damage for the type given.
+    def get_max_dam(self, dec_places=3):
+        """Return the gun's highest damage, regardless of the range this occurs at.
 
         If you want the damage the gun will do at a given range, see 'shot_dam'.
 
-        Input:
-        ------
-        dam_type - string: either 'bod_dam' for body damage or 'ar_dam' for
-                   armour damage.
-
         Returns:
         --------
-        float: the base damage of the gun.
+        float: the max damage of the gun.
         """
         # This getter exists on account of the potential for the base damage
         # of the weapon to be determined by having the attachments modify the
@@ -217,17 +197,55 @@ class Gun():
         # the instance damage alone
         #
         # yes, I dislike getters so much I am justifying making one here
-        if dam_type == "bod_dam":
-            return self._bod_dam
-        if dam_type == "ar_dam":
-            return self._ar_dam
-        return None
+        max_coef = max(self._dam_prof[0][0], self._dam_prof[1][0])
+        return round(max_coef * self._dam, dec_places)
 
-    def _cubic_coef(self, dist):
-        """Return the falloff range damage coeficient using cubic model."""
-        # The damage coefficient function here runs from x=0 to x=250. Thus,
-        # we must offset the falloff distance to x=0 for the gun by subtracting
-        # its starting falloff value
+    def _calc_falloff_coef(self, dist):
+        """Return the falloff range damage coeficient using cubic model.
+
+        Input:
+        ------
+        dist - float: the distance from the shooter to the target. The value
+               given is assumed to be in the guns falloff range.
+        """
+        if self._dam_prof[1][0] < dist < self._dam_prof[0][0]:
+            raise ValueError("_calc_fallof_coef: "
+                             "Distance is not in the falloff range of the gun")
+        # here is an essay on how this was derived.
+        # Guns in the game have a damage falloff curve. The curve is generally
+        # cubic and where it is not, this function must be overridden.
+        # Observing the curves lead me to discover that the minimum damage a gun
+        # does (the bottom point of the curve) is a percentage of the base
+        # damage. Thus, we can easily generalise to calculate damage by using
+        # a scaling coefficient beginning at 1 for the start of the falloff
+        # range, and ending at the minimum coeficient (0.25 for eg).
+        # This fuction estimates that coefficient for any given distance inside
+        # the falloff range.
+
+        # To get a function we can take some real data from the game
+        # (by shooting a gun) and recording the damage values from the start
+        # of the falloff to the end. dividing by the guns damage yields a
+        # set of coefficients.The problem
+        # is that the gun we choose likely has a fallof domain
+        # (end dist - start dist) or minimum coefficient that isn't the same
+        # for all guns. To make it work for them, the domain and range of the
+        # function must be scaled to fit the gun we are estimating for.
+
+        # Gun 1 falloff (master)    Gun 2 falloff (some gun with more range)
+        # |                         |
+        # |-- . p1                  |-----. p1
+        # |  (fancy curve)          |   (fancy curve)
+        # |      p2 .-------        |
+        # |                         |               p2 .-------
+        # ---------------------     -------------------------
+        #
+        # The equation for gun 1 will not generalise to 2; it has a longer
+        # falloff domain and lower minimum coefficient.
+        # So we stretch the domain and range of the cubic regression to fit
+
+        # The damage coefficient function here was derived from a cubic regression
+        # done from x=0 to x=250. Thus, we must offset the falloff distance to
+        # x=0 for the gun by subtracting its starting falloff value
         dist -= self._dam_prof[0][0]
 
         # because we go from 0 to 250, any guns that have a shorter falloff
@@ -237,12 +255,16 @@ class Gun():
         xscale = (xcalcedrange[1] - xcalcedrange[0])/(xrange[1] - xrange[0])
 
         # the y axis may also need scaling depending on _MIN_CO
-        ycalcedrange = 0.35
-        yrange = self._MIN_CO
+        # So I wrote what follows a while ago, and I can't work out y it works
+        # anymore...
+
         # this is derived from a simultanous equation:
-        # f(250)*m + c = 0.25
+        # f(250)*m + c = 0.25 (250 being the end of regressed gun's donmain and
+        #                      0.25 being the gun's minimum coefficient)
         # f(0)*m + c = 1
-        yscale = (yrange - 1)/(ycalcedrange - 1)  # this is m
+        ycalcedmin = 0.35
+        ymin = self._MIN_CO
+        yscale = (ymin - 1)/(ycalcedmin - 1)  # this is m
         # see polyfit_real.py for the derivation of the cubic regression
         coef = (8.353*10**(-8)*(xscale*dist)**3
                 - 3.119*10**(-5)*(xscale*dist)**2
@@ -251,43 +273,37 @@ class Gun():
         #        m    * f(x) + (   c    )
         return yscale * coef + 1 - yscale
 
-    def shot_dam(self, dist, dam_type):
+    def shot_dam_at_range(self, dist):
         """Returns the damage a bullet will do at the given distance.
 
         Inputs:
         -------
-        dist     - distance to the target, positive value
-        dam_type - string, the damage type 'bod_dam' for body damage, 'ar_dam'
-                   for armour damage
+        dist     - distance to the target, positive value, meters
+
+        Returns:
+        --------
+        float: the damage the bullet will do at the given distance
         """
-        dam = self.get_max_base_dam(dam_type)
+        dam = self._dam
+        assert dist >= 0
         if dist <= self._dam_prof[0][0]:
             return dam * self._dam_prof[0][1]
         if dist >= self._dam_prof[1][0]:
             return self._dam_prof[1][1] * dam
 
-        dam_coef = self._cubic_coef(dist)
+        dam_coef = self._calc_falloff_coef(dist)
         return dam * dam_coef
 
-    def btk(self, dist, dam_type):
-        """Return the number of hits needed to kill at the given distance.
+    def btk(self, dist):
+        """Return the number of hits needed to kill at the given distance."""
+        return ceil(100/self.shot_dam_at_range(dist))
 
-        Inputs:
-        ------
-        dist     - distance to the target, positive value
-        dam_type - string, the damage type 'bod_dam' for body damage, 'ar_dam'
-                   for armour damage
-        """
-        return ceil(100/self.shot_dam(dist, dam_type))
-
-    def ttk(self, dist, dam_type, inc_ads=False):
+    def ttk(self, dist, inc_ads=False):
         """Returns the time to kill a full health opponent in milliseconds (ms).
 
         Inputs:
         -------
-        dist     - distance to the target, positive value
-        dam_type - string, the damage type 'bod_dam' for body damage, 'ar_dam'
-                   for armour damage
+        dist     - distance to the target, positive value, meters
         """
         # Shoot time = milliseconds per round * number of rounds
         #            = milliseconds
@@ -295,7 +311,7 @@ class Gun():
         # thus, there are btk - 1 times the rof delays the kill
         # minute_to_millisec_conv_coeff = 60000
         shoot_time = (1/self.rof * 60000
-                      * (self.btk(dist, dam_type) - 1)
+                      * (self.btk(dist) - 1)
                      )
         tof = dist/self.velocity*1000   # velocity is in m/s, tof in ms
         ads_time = self.aim_down*1000 if inc_ads else 0 # aim down is in s
@@ -308,21 +324,19 @@ class Gun():
                 "mag": self.mag.NAME, "s_rail": self.s_rail.NAME,
                 "u_rail": self.u_rail.NAME, "barrel": self.barrel.NAME}
 
-    def _apply_attach(self, attachment):
+    def _apply_attach(self, attachment, dec_places=3):
         """Apply the attachment to the weapon."""
-        self._bod_dam = dp3(self._bod_dam * attachment._BOD_DAM)
-        self._ar_dam = dp3(self._ar_dam * attachment._AR_DAM)
-        self.velocity = dp3(self.velocity * attachment._VELOCITY)
-        self.rof = dp3(self.rof * attachment._ROF)
-        self.aim_down = dp3(self.aim_down * attachment._AIM_DOWN)
+        self._dam = round(self._dam * attachment._DAM, dec_places)
+        self.velocity = round(self.velocity * attachment._VELOCITY, dec_places)
+        self.rof = round(self.rof * attachment._ROF, dec_places)
+        self.aim_down = round(self.aim_down * attachment._AIM_DOWN, dec_places)
 
-    def _remove_attach(self, attachment):
+    def _remove_attach(self, attachment, dec_places=3):
         """Removes the attachment from the weapon."""
-        self._bod_dam = dp3(self._bod_dam / attachment._BOD_DAM)
-        self._ar_dam = dp3(self._ar_dam / attachment._AR_DAM)
-        self.velocity = dp3(self.velocity / attachment._VELOCITY)
-        self.rof = dp3(self.rof / attachment._ROF)
-        self.aim_down = dp3(self.aim_down / attachment._AIM_DOWN)
+        self._dam = round(self._dam / attachment._DAM, dec_places)
+        self.velocity = round(self.velocity / attachment._VELOCITY, dec_places)
+        self.rof = round(self.rof / attachment._ROF, dec_places)
+        self.aim_down = round(self.aim_down / attachment._AIM_DOWN, dec_places)
 
     def swap_sight(self, attachment):
         """Swap the gun's current sight out for the given one.
@@ -337,8 +351,11 @@ class Gun():
         ValueError - if the given attachment isn't in the gun's val_sights
                      class variable
         """
-        if attachment not in self.val_sights:
-            raise ValueError(f"This {attachment.TYPE} cannot be put here.")
+        # TODO: a composite might allow you to remove all these duplicate
+        # functions
+        if attachment is not EmptySight:    # ensure empty is allowed
+            if attachment not in self.val_sights:
+                raise ValueError(f"This {attachment.TYPE} cannot be put here.")
         if self.sight != attachment:
             self._remove_attach(self.sight)
             self._apply_attach(attachment)
@@ -357,8 +374,9 @@ class Gun():
         ValueError - if the given attachment isn't in the gun's val_c_sights
                      class variable
         """
-        if attachment not in self.val_c_sights:
-            raise ValueError(f"This {attachment.TYPE} cannot be put here.")
+        if attachment is not EmptyCSight:    # ensure empty is allowed
+            if attachment not in self.val_c_sights:
+                raise ValueError(f"This {attachment.TYPE} cannot be put here.")
         if self.c_sight != attachment:
             self._remove_attach(self.c_sight)
             self._apply_attach(attachment)
@@ -377,8 +395,9 @@ class Gun():
         ValueError - if the given attachment isn't in the gun's val_mags
                      class variable
         """
-        if attachment not in self.val_mags:
-            raise ValueError(f"This {attachment.TYPE} cannot be put here.")
+        if attachment is not EmptyMag:    # ensure empty is allowed
+            if attachment not in self.val_mags:
+                raise ValueError(f"This {attachment.TYPE} cannot be put here.")
         if self.mag != attachment:
             self._remove_attach(self.mag)
             self._apply_attach(attachment)
@@ -397,8 +416,9 @@ class Gun():
         ValueError - if the given attachment isn't in the gun's val_s_rails
                      class variable
         """
-        if attachment not in self.val_s_rails:
-            raise ValueError(f"This {attachment.TYPE} cannot be put here.")
+        if attachment is not EmptySRail:    # ensure empty is allowed
+            if attachment not in self.val_s_rails:
+                raise ValueError(f"This {attachment.TYPE} cannot be put here.")
         if self.s_rail != attachment:
             self._remove_attach(self.s_rail)
             self._apply_attach(attachment)
@@ -417,8 +437,9 @@ class Gun():
         ValueError - if the given attachment isn't in the gun's val_u_rails
                      class variable
         """
-        if attachment not in self.val_u_rails:
-            raise ValueError(f"This {attachment.TYPE} cannot be put here.")
+        if attachment is not EmptyURail:    # ensure empty is allowed
+            if attachment not in self.val_u_rails:
+                raise ValueError(f"This {attachment.TYPE} cannot be put here.")
         if self.u_rail != attachment:
             self._remove_attach(self.u_rail)
             self._apply_attach(attachment)
@@ -437,23 +458,29 @@ class Gun():
         ValueError - if the given attachment isn't in the gun's val_barrels
                      class variable
         """
-        if attachment not in self.val_barrels:
-            raise ValueError(f"This {attachment.TYPE} cannot be put here.")
+        if attachment is not EmptyBarrel:    # ensure empty is allowed
+            if attachment not in self.val_barrels:
+                raise ValueError(f"This {attachment.TYPE} cannot be put here.")
         if self.barrel != attachment:
             self._remove_attach(self.barrel)
             self._apply_attach(attachment)
             self.barrel = attachment
 
-    # TODO: remove the slot argument by retrieving this info from the attachment
-    def swap_attach(self, slot, attachment):
-        """Change the attachment in the slot given to the one given.
+    def swap_attach(self, attachment):
+        """Swap the gun's current attachment out for the given one.
 
+        The slot the attachment goes into is determined by the attachment. If
+        it's a barrel, it goes into the barrel slot, etc.
 
         Inputs:
         -------
-        slot       - str, the part of the gun the attachment is to go on.
         attachment - attachment class object eg: 'EmptyBarrel'
+
+        Raises:
+        -------
+        ValueError - the given attachment doesn't match a slot name.
         """
+        slot = attachment.TYPE
         if slot == "barrel":
             self.swap_barrel(attachment)
         elif slot == "u_rail":
@@ -466,6 +493,8 @@ class Gun():
             self.swap_c_sight(attachment)
         elif slot == "sight":
             self.swap_sight(attachment)
+        else:
+            raise ValueError(f"{slot} is not a valid slot argument.")
 
 
 class Ar(Gun):
@@ -593,8 +622,8 @@ class Ak74(Ar):
     def __init__(self, gun_name="AK74"):
         super().__init__()
         self.name = gun_name
-        self._bod_dam = 33
-        self._ar_dam = 33
+        self._dam = 33
+        # TODO: _dam_prof should be an object...
         self._dam_prof = [(50, 1), (300, self._MIN_CO)]
         self.rof = 670
         self.velocity = 700
@@ -644,8 +673,7 @@ class M4a1(Ar):
     def __init__(self, gun_name="M4A1"):
         super().__init__()
         self.name = gun_name
-        self._bod_dam = 30
-        self._ar_dam = 30
+        self._dam = 30
         self._dam_prof = [(50, 1), (300, self._MIN_CO)]
         self.rof = 700
         self.velocity = 700
@@ -695,8 +723,7 @@ class Ak15(Ar):
     def __init__(self, gun_name="AK15"):
         super().__init__()
         self.name = gun_name
-        self._bod_dam = 40
-        self._ar_dam = 40
+        self._dam = 40
         self._dam_prof = [(150, 1), (300, self._MIN_CO)]
         self.rof = 540
         self.velocity = 750
@@ -746,8 +773,7 @@ class ScarH(Ar):
     def __init__(self, gun_name="SCAR-H"):
         super().__init__()
         self.name = gun_name
-        self._bod_dam = 42
-        self._ar_dam = 42
+        self._dam = 42
         self._dam_prof = [(150, 1), (300, self._MIN_CO)]
         self.rof = 500
         self.velocity = 750
@@ -797,8 +823,7 @@ class Acr(Ar):
     def __init__(self, gun_name="ACR"):
         super().__init__()
         self.name = gun_name
-        self._bod_dam = 25
-        self._ar_dam = 30
+        self._dam = 25
         self._dam_prof = [(50, 1), (300, self._MIN_CO)]
         self.rof = 700
         self.velocity = 650
@@ -848,8 +873,7 @@ class AugA3(Ar):
     def __init__(self, gun_name="AUG_A3"):
         super().__init__()
         self.name = gun_name
-        self._bod_dam = 31
-        self._ar_dam = 35
+        self._dam = 31
         self._dam_prof = [(150, 1), (300, self._MIN_CO)]
         self.rof = 500
         self.velocity = 600
@@ -899,8 +923,7 @@ class Sg550(Ar):
     def __init__(self, gun_name="SG550"):
         super().__init__()
         self.name = gun_name
-        self._bod_dam = 27
-        self._ar_dam = 27
+        self._dam = 27
         self._dam_prof = [(150, 1), (300, self._MIN_CO)]
         self.rof = 700
         self.velocity = 640
@@ -950,8 +973,7 @@ class Fal(Ar):
     def __init__(self, gun_name="FAL"):
         super().__init__()
         self.name = gun_name
-        self._bod_dam = 40
-        self._ar_dam = 30
+        self._dam = 40
         self._dam_prof = [(150, 1), (300, self._MIN_CO)]
         self.rof = 650
         self.velocity = 600
@@ -1002,8 +1024,7 @@ class G36c(Ar):
         super().__init__()
         self.name = gun_name
         self.val_barrels = np.array([Ranger, LongBarrel])
-        self._bod_dam = 30
-        self._ar_dam = 25
+        self._dam = 30
         self._dam_prof = [(50, 1), (300, self._MIN_CO)]
         self.rof = 750
         self.velocity = 600
@@ -1054,8 +1075,7 @@ class Famas(Ar):
         super().__init__()
         self.name = gun_name
         self.val_barrels = np.array([Ranger, LongBarrel])
-        self._bod_dam = 23
-        self._ar_dam = 23
+        self._dam = 23
         self._dam_prof = [(50, 1), (300, self._MIN_CO)]
         self.rof = 900
         self.velocity = 600
@@ -1105,8 +1125,7 @@ class Hk419(Ar):
     def __init__(self, gun_name="HK419"):
         super().__init__()
         self.name = gun_name
-        self._bod_dam = 31
-        self._ar_dam = 31
+        self._dam = 31
         self._dam_prof = [(50, 1), (300, self._MIN_CO)]
         self.rof = 660
         self.velocity = 700
@@ -1156,8 +1175,7 @@ class L86a1(Lmg):
     def __init__(self, gun_name="L86A1"):
         super().__init__()
         self.name = gun_name
-        self._bod_dam = 32
-        self._ar_dam = 36
+        self._dam = 32
         self._dam_prof = [(100, 1), (300, self._MIN_CO)]
         self.rof = 775
         self.velocity = 600
@@ -1207,8 +1225,7 @@ class M249(Lmg):
     def __init__(self, gun_name="M249"):
         super().__init__()
         self.name = gun_name
-        self._bod_dam = 30
-        self._ar_dam = 50
+        self._dam = 30
         self._dam_prof = [(100, 1), (300, self._MIN_CO)]
         self.rof = 700
         self.velocity = 600
@@ -1260,8 +1277,7 @@ class Mp7(Smg):
     def __init__(self, gun_name="MP7"):
         super().__init__()
         self.name = gun_name
-        self._bod_dam = 25
-        self._ar_dam = 25
+        self._dam = 25
         self._dam_prof = [(50, 1), (200, self._MIN_CO)]
         self.rof = 950
         self.velocity = 350
@@ -1311,8 +1327,7 @@ class Ump45(Smg):
     def __init__(self, gun_name="UMP-45"):
         super().__init__()
         self.name = gun_name
-        self._bod_dam = 25
-        self._ar_dam = 25
+        self._dam = 25
         self._dam_prof = [(50, 1), (200, self._MIN_CO)]
         self.rof = 700
         self.velocity = 500
@@ -1362,8 +1377,7 @@ class Pp2000(Smg):
     def __init__(self, gun_name="PP2000"):
         super().__init__()
         self.name = gun_name
-        self._bod_dam = 23
-        self._ar_dam = 23
+        self._dam = 23
         self._dam_prof = [(50, 1), (200, self._MIN_CO)]
         self.rof = 900
         self.velocity = 350
@@ -1413,8 +1427,7 @@ class KrissVector(Smg):
     def __init__(self, gun_name="KRISS_VECTOR"):
         super().__init__()
         self.name = gun_name
-        self._bod_dam = 24
-        self._ar_dam = 24
+        self._dam = 24
         self._dam_prof = [(50, 1), (200, self._MIN_CO)]
         self.rof = 1200
         self.velocity = 400
@@ -1464,8 +1477,7 @@ class Mp5(Smg):
     def __init__(self, gun_name="MP5"):
         super().__init__()
         self.name = gun_name
-        self._bod_dam = 26
-        self._ar_dam = 26
+        self._dam = 26
         self._dam_prof = [(50, 1), (200, self._MIN_CO)]
         self.rof = 800
         self.velocity = 400
@@ -1516,8 +1528,7 @@ class Pp19(Smg):
         super().__init__()
         self.name = gun_name
         self.val_barrels = np.array([])
-        self._bod_dam = 25
-        self._ar_dam = 25
+        self._dam = 25
         self._dam_prof = [(50, 1), (200, self._MIN_CO)]
         self.rof = 750
         self.velocity = 400
@@ -1567,8 +1578,7 @@ class HoneyBadger(Pdw):
     def __init__(self, gun_name="HONEY_BADGER"):
         super().__init__()
         self.name = gun_name
-        self._bod_dam = 35
-        self._ar_dam = 35
+        self._dam = 35
         self._dam_prof = [(50, 1), (200, self._MIN_CO)]
         self.rof = 800
         self.velocity = 560
@@ -1618,8 +1628,7 @@ class P90(Pdw):
     def __init__(self, gun_name="P90"):
         super().__init__()
         self.name = gun_name
-        self._bod_dam = 28
-        self._ar_dam = 28
+        self._dam = 28
         self._dam_prof = [(50, 1), (200, self._MIN_CO)]
         self.rof = 800
         self.velocity = 390
@@ -1669,8 +1678,7 @@ class Groza(Pdw):
     def __init__(self, gun_name="GROZA"):
         super().__init__()
         self.name = gun_name
-        self._bod_dam = 27
-        self._ar_dam = 34
+        self._dam = 27
         self._dam_prof = [(50, 1), (200, self._MIN_CO)]
         self.rof = 700
         self.velocity = 390
@@ -1720,22 +1728,8 @@ class AsVal(Carbine):
     def __init__(self, gun_name="AS_VAL"):
         super().__init__()
         self.name = gun_name
-        self._bod_dam = 35
-        self._ar_dam = 35
+        self._dam = 35
         self._dam_prof = [(50, 1), (200, self._MIN_CO)]
         self.rof = 800
         self.velocity = 560
         self.aim_down = 0.2
-
-
-class TestGunObj(unittest.TestCase):
-    def test_gun__init__(self):
-        gun = Ak15()
-        self.assertEqual(gun.gun_name, "AK15")
-
-    def test_gun__str__(self):
-        gun = Ak15()
-        self.assertEqual(str(gun), "AK15")
-
-if __name__ == "__main__":
-    unittest.main()

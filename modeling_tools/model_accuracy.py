@@ -29,9 +29,9 @@ def remove_guns_from_damage_dict_without_corresponding_gun_obj(damage_dict,
 def add_modelled_damage_to_dict(damage_dict, gun_objs, model_name="model_damage"):
     """Add calculated damage to the real damage dict."""
     for gun in gun_objs:
-        damage_dict[gun.name][model_name] = ([gun.shot_dam(d, "bod_dam")
-                                                   for d in
-                                                   damage_dict[gun.name]["dist"]])
+        damage_dict[gun.name][model_name] = ([gun.shot_dam_at_range(d)
+                                              for d in
+                                              damage_dict[gun.name]["dist"]])
 
 def plot_model_vs_real_damage(damage_dict, MODEL_NAME):
     """Plot the model damage versus the real damage."""

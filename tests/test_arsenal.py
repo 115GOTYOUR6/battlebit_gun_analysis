@@ -1,4 +1,8 @@
-"""Test gen_arsenal.py"""
+"""Test arsenal.py
+
+Run this from project root via:
+python3 -m unittest discover ./tests/ test_arsenal.py
+"""
 
 import unittest
 import arsenal as ga
